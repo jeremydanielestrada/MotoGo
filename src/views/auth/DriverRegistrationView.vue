@@ -40,13 +40,20 @@ function onClick() {
 
                 <v-card-text class="bg-surface-light pt-4">
                   <v-form fast-fail @submit.prevent>
-                    <v-text-field label="First Name" type="text" variant="outlined"></v-text-field>
-
-                    <v-text-field
-                      label="Last Name"
-                      type="password"
-                      variant="outlined"
-                    ></v-text-field>
+                    <div class="d-flex ga-2">
+                      <v-text-field
+                        label="First Name"
+                        type="text"
+                        variant="outlined"
+                        max-width="200"
+                      ></v-text-field>
+                      <v-text-field
+                        label="Last Name"
+                        type="password"
+                        variant="outlined"
+                        max-width="200"
+                      ></v-text-field>
+                    </div>
 
                     <v-text-field
                       label="Phone Number"
@@ -74,24 +81,18 @@ function onClick() {
                       prepend-icon="mdi-upload-outline"
                       counter
                       multiple
-                      variant="plain"
+                      variant="plained"
                     >
                     </v-file-input>
 
                     <div class="d-flex justify-center">
-                      <v-btn
-                        class="mt-2"
-                        type="submit"
-                        ripple
-                        prepend-icon="mdi-account-arrow-right-outline"
+                      <v-btn type="submit" ripple prepend-icon="mdi-account-arrow-right-outline"
                         >Submit</v-btn
                       >
                     </div>
                   </v-form>
                   <v-divider class="mt-5"> </v-divider>
-                  <h5 class="mt-2">
-                    Register as a driver?<RouterLink to="/register"> Click here </RouterLink>
-                  </h5>
+                  <h5 class="mt-2 text-center">Moto Go</h5>
                 </v-card-text>
               </v-card>
             </v-col>

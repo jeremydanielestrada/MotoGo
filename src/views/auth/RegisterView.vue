@@ -40,12 +40,20 @@ function onClick() {
 
                 <v-card-text class="bg-surface-light pt-4">
                   <v-form fast-fail @submit.prevent>
-                    <v-text-field label="First Name" type="text" variant="outlined"></v-text-field>
-                    <v-text-field
-                      label="Last Name"
-                      type="password"
-                      variant="outlined"
-                    ></v-text-field>
+                    <div class="d-flex ga-2">
+                      <v-text-field
+                        label="First Name"
+                        type="text"
+                        variant="outlined"
+                        max-width="200"
+                      ></v-text-field>
+                      <v-text-field
+                        label="Last Name"
+                        type="password"
+                        variant="outlined"
+                        max-width="200"
+                      ></v-text-field>
+                    </div>
 
                     <v-text-field
                       label="Phone Number"
