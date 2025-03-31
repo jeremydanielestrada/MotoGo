@@ -42,7 +42,6 @@ function onClick() {
                   
                   <v-form fast-fail @submit.prevent>
                     <v-text-field label="First Name" type="text" variant="outlined"></v-text-field>
-
                     <v-text-field
                       label="Last Name"
                       type="password"
