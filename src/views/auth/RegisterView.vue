@@ -39,7 +39,6 @@ function onClick() {
                 </template>
 
                 <v-card-text class="bg-surface-light pt-4">
-                  <p>hello world</p>
                   <v-form fast-fail @submit.prevent>
                     <v-text-field label="First Name" type="text" variant="outlined"></v-text-field>
 
