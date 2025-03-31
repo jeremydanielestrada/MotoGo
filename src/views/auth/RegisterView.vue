@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import RegisterForm from '@/components/auth/RegisterForm.vue'
 </script>
 
 <template>
@@ -16,41 +17,11 @@ import AppLayout from '@/components/layout/AppLayout.vue'
             image="/images/Background.jpg"
             elevation="20"
           >
-            <template v-slot:title>
-              <span class="font-weight-black">Moto Go</span>
-            </template>
-
+            <v-card-title>
+              <h3 class="font-weight-black text-center">Moto Go</h3>
+            </v-card-title>
             <v-card-text class="bg-surface-light pt-4">
-              <v-form fast-fail @submit.prevent>
-                <div class="d-flex ga-2">
-                  <v-text-field
-                    label="First Name"
-                    type="text"
-                    variant="outlined"
-                    max-width="200"
-                  ></v-text-field>
-                  <v-text-field
-                    label="Last Name"
-                    type="password"
-                    variant="outlined"
-                    max-width="200"
-                  ></v-text-field>
-                </div>
-
-                <v-text-field label="Phone Number" type="phone" variant="outlined"></v-text-field>
-
-                <v-text-field label="Password" type="password" variant="outlined"></v-text-field>
-
-                <v-text-field
-                  label="Retype Password"
-                  type="password"
-                  variant="outlined"
-                ></v-text-field>
-
-                <div class="d-flex justify-center">
-                  <v-btn class="mt-2" type="submit" ripple>Submit</v-btn>
-                </div>
-              </v-form>
+              <RegisterForm></RegisterForm>
               <v-divider class="mt-5"> </v-divider>
               <h5 class="mt-2">
                 Register as a driver?<RouterLink to="/driver-register"> Click here </RouterLink>
