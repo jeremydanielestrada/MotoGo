@@ -7,13 +7,13 @@ import RegisterForm from '@/components/auth/RegisterForm.vue'
 <template>
   <AppLayout>
     <template #content>
-      <v-row align="center" justify="center">
-        <v-col cols="12" sm="8" md="6" lg="4">
+      <v-row align="center" justify="end">
+        <v-col cols="12" md="6" sm="8" lg="4">
           <v-card
             class="mx-auto"
             prepend-icon="mdi-login"
             subtitle="Log In"
-            max-width="400"
+            max-width="100%"
             image="/images/Background.jpg"
             elevation="20"
           >
