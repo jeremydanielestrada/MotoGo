@@ -1,6 +1,5 @@
 <script setup>
 import { ref } from 'vue'
-import { VFileUpload } from 'vuetify/lib/labs/components.mjs'
 import {
   confirmedValidator,
   emailValidator,
@@ -11,6 +10,8 @@ import {
 } from '@/utils/validator'
 
 const refVform = ref()
+
+const visible = ref(false)
 
 const formDataDefault = {
   firstName: '',
@@ -53,7 +54,7 @@ const onSubmit = () => {
       <v-col cols="12" md="6">
         <v-text-field
           label="Last Name"
-          type="password"
+          type="text"
           variant="outlined"
           v-model="formData.lastName"
           :rules="[requiredValidator]"
@@ -65,6 +66,7 @@ const onSubmit = () => {
           label="Phone Number"
           type="phone"
           variant="outlined"
+          prepend-inner-icon="mdi-phone"
           v-model="formData.phoneNumber"
           :rules="[requiredValidator, integerValidator]"
         ></v-text-field>
@@ -75,6 +77,7 @@ const onSubmit = () => {
           label="Email"
           type="email"
           variant="outlined"
+          prepend-inner-icon="mdi-email-outline"
           v-model="formData.email"
           :rules="[requiredValidator, emailValidator]"
         ></v-text-field>
@@ -85,6 +88,7 @@ const onSubmit = () => {
           label="Password"
           type="password"
           variant="outlined"
+          prepend-inner-icon="mdi-lock-outline"
           v-model="formData.password"
           :rules="[requiredValidator, passwordValidator]"
         ></v-text-field>
@@ -92,8 +96,11 @@ const onSubmit = () => {
       <v-col cols="12" md="6">
         <v-text-field
           label="Confirm  Password"
-          type="password"
+          :type="visible ? 'text' : 'password'"
           variant="outlined"
+          :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
+          @click:append-inner="visible = !visible"
+          prepend-inner-icon="mdi-lock-outline"
           v-model="formData.confirmPassword"
           :rules="[requiredValidator, confirmedValidator]"
         ></v-text-field>

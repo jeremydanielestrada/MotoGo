@@ -9,13 +9,7 @@ import LoginForm from '@/components/auth/LoginForm.vue'
     <template #content>
       <v-row align="center" justify="center">
         <v-col cols="12" sm="8" md="6" lg="4">
-          <v-card
-            class="mx-auto"
-            prepend-icon="mdi-login"
-            max-width="400"
-            image="/images/Background.jpg"
-            elevation="20"
-          >
+          <v-card class="mx-auto" max-width="400" elevation="20">
             <v-card-title>
               <h3 class="font-weight-black text-center">Moto Go</h3>
             </v-card-title>

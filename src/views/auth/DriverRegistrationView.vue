@@ -9,9 +9,8 @@ import DriverRegistration from '@/components/auth/DriverRegistration.vue'
     <template #content>
       <v-row align="center" justify="end">
         <v-col cols="12" sm="8" md="6" lg="4">
-          <v-card class="mx-auto" max-width="100%" image="/images/Background.jpg" elevation="20">
+          <v-card class="mx-auto" max-width="100%" elevation="20">
             <v-card-title class="text-center">
-              <v-icon class="">mdi-login</v-icon>
               <h3 class="font-weight-black">Moto Go</h3>
               <p>Driver's form</p>
             </v-card-title>

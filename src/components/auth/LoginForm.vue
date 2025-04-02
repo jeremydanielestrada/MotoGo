@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
-import { requiredValidator } from '@/utils/validator'
-const isPasswordVisiblle = ref(false)
+import { emailValidator, requiredValidator } from '@/utils/validator'
+const visible = ref(false)
 
 const refVform = ref()
 
@@ -33,17 +33,21 @@ const onSubmit = () => {
 <template>
   <v-form ref="refVform" fast-fail @submit.prevent="onSubmit">
     <v-text-field
-      label="User name"
-      type="text"
+      label="Email"
+      type="email"
+      prepend-inner-icon="mdi-email-outline"
       variant="outlined"
-      :rules="[requiredValidator]"
+      :rules="[requiredValidator, emailValidator]"
       v-model="formData.username"
     ></v-text-field>
 
     <v-text-field
       label="Password"
-      type="password"
       variant="outlined"
+      :type="visible ? 'text' : 'password'"
+      prepend-inner-icon="mdi-lock-outline"
+      :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
+      @click:append-inner="visible = !visible"
       :rules="[requiredValidator]"
       v-model="formData.password"
     ></v-text-field>

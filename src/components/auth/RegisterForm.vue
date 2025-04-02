@@ -9,6 +9,7 @@ import {
 } from '@/utils/validator'
 
 const refVform = ref()
+const visible = ref(false)
 
 const formDataDefault = {
   firstName: '',
@@ -61,6 +62,7 @@ const onSubmit = () => {
         <v-text-field
           label="Phone Number"
           type="phone"
+          prepend-inner-icon="mdi-phone"
           variant="outlined"
           v-model="formData.phoneNumber"
           :rules="[requiredValidator, integerValidator]"
@@ -82,6 +84,7 @@ const onSubmit = () => {
           label="Password"
           type="password"
           variant="outlined"
+          prepend-inner-icon="mdi-lock-outline"
           v-model="formData.password"
           :rules="[requiredValidator, passwordValidator]"
         ></v-text-field>
@@ -89,9 +92,12 @@ const onSubmit = () => {
       <v-col cols="12" md="6">
         <v-text-field
           label="Confirm  Password"
-          type="password"
+          :type="visible ? 'text' : 'password'"
           variant="outlined"
+          prepend-inner-icon="mdi-lock-outline"
           v-model="formData.confirmPassword"
+          :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
+          @click:append-inner="visible = !visible"
           :rules="[requiredValidator, confirmedValidator]"
         ></v-text-field>
       </v-col>
