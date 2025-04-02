@@ -108,12 +108,10 @@ const onSubmit = () => {
 
       <v-col cols="12" md="12" align="center" justify="center">
         <v-file-input
-          label="Upload Driver's License"
-          variant="outlined"
+          label="File input"
+          variant="solo"
           width="300"
-          v-model="formData.driverLicense"
           :rules="[requiredValidator, imageValidator]"
-          border="0"
         ></v-file-input>
       </v-col>
 
