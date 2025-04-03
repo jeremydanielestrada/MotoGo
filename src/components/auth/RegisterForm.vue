@@ -8,6 +8,7 @@ import {
   requiredValidator,
 } from '@/utils/validator'
 import { supabase, formActionDefault } from '@/utils/supabase'
+import AlertNotification from '../common/AlertNotification.vue'
 
 const refVform = ref()
 const visible = ref(false)
@@ -30,6 +31,8 @@ const formAction = ref({
 })
 
 const onLogin = async () => {
+  console.log('onLogin called')
+  console.log('Submitting form data:', formData.value)
   formAction.value = { ...formActionDefault }
   formAction.value.formProcess = true
 
@@ -52,6 +55,7 @@ const onLogin = async () => {
     console.log(data)
     formAction.value.formSuccessMessage = 'Succes fully registered'
     formAction.value.formStatus = data.status
+    refVform.value?.reset()
   }
 
   formAction.value.formProcess = false
@@ -59,6 +63,7 @@ const onLogin = async () => {
 
 const onSubmit = () => {
   refVform.value?.validate().then(({ valid }) => {
+    console.log('Form valid:', valid)
     if (valid) {
       onLogin()
     }
@@ -67,31 +72,13 @@ const onSubmit = () => {
 </script>
 
 <template>
-  <v-alert
-    v-if="formAction.formSuccessMessage"
-    :text="formAction.formSuccessMessage"
-    title="Success!"
-    type="Success"
-    variant="tonal"
-    density="compact"
-    border="start"
-    closable=""
+  <AlertNotification
+    :form-success-message="formAction.formSuccessMessage"
+    :form-error-message="formAction.formErrorMessage"
   >
-  </v-alert>
+  </AlertNotification>
 
-  <v-alert
-    v-if="formAction.formErrorMessage"
-    :text="formAction.formErrorMessage"
-    title="Ooops!"
-    type="error"
-    variant="tonal"
-    density="compact"
-    border="start"
-    closable=""
-  >
-  </v-alert>
-
-  <v-form fast-fail @submit.prevent="onSubmit">
+  <v-form ref="refVform" class="mt-5" fast-fail @submit.prevent="onSubmit">
     <v-row>
       <v-col cols="12" md="6">
         <v-text-field
@@ -153,7 +140,10 @@ const onSubmit = () => {
           v-model="formData.confirmPassword"
           :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
           @click:append-inner="visible = !visible"
-          :rules="[requiredValidator, (value) => confirmedValidator(value, formData.password)]"
+          :rules="[
+            requiredValidator,
+            confirmedValidator(formData.confirmPassword, formData.password),
+          ]"
         ></v-text-field>
       </v-col>
       <v-col align="center" justify="center">
