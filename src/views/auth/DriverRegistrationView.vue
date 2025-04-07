@@ -22,9 +22,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
             <v-card-text class="bg-surface-light pt-4">
               <DriverRegistrationForm></DriverRegistrationForm>
               <v-divider class="mt-5"> </v-divider>
-              <h5 class="mt-2">
-                Already have an account?<RouterLink to="/login"> Log In </RouterLink>
-              </h5>
+              <h5 class="mt-2">Already have an account?<RouterLink to="/"> Log In </RouterLink></h5>
             </v-card-text>
           </v-card>
         </v-col>
