@@ -1,10 +1,6 @@
 <script setup>
 import LoginForm from '@/components/auth/LoginForm.vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
-
-import { ref } from 'vue'
-import AppLayout from '@/components/layout/AppLayout.vue'
-import LoginForm from '@/components/auth/LoginForm.vue'
 </script>
 
 <template>

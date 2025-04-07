@@ -1,4 +1,3 @@
-login form:
 <template>
   <v-form fast-fail @submit.prevent>
     <v-text-field label="User name" type="text" variant="outlined"></v-text-field>
