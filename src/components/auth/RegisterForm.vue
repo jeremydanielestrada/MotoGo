@@ -53,7 +53,7 @@ const onLogin = async () => {
     formAction.value.formStatus = error.status
   } else if (data) {
     console.log(data)
-    formAction.value.formSuccessMessage = 'Succes fully registered'
+    formAction.value.formSuccessMessage = 'Successfully registered'
     formAction.value.formStatus = data.status
     refVform.value?.reset()
   }
@@ -147,15 +147,25 @@ const onSubmit = () => {
         ></v-text-field>
       </v-col>
       <v-col align="center" justify="center">
-        <v-btn
-          class="mt-2"
-          type="submit"
-          ripple
-          :disabled="formAction.formProcess"
-          :loading="formAction.formProcess"
-          >Submit</v-btn
-        >
+        <v-hover v-slot="{ isHovering, props }">
+          <v-btn
+            v-bind="props"
+            :color="isHovering ? 'purple-darken-1' : undefined"
+            class="mt-2 submit-button"
+            type="submit"
+            ripple
+            :disabled="formAction.formProcess"
+            :loading="formAction.formProcess"
+            >Submit</v-btn
+          >
+        </v-hover>
       </v-col>
     </v-row>
   </v-form>
 </template>
+
+<style scoped>
+.submit-button {
+  background-color: #e1bee7;
+}
+</style>

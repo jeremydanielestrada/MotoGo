@@ -52,7 +52,26 @@ const onSubmit = () => {
       v-model="formData.password"
     ></v-text-field>
     <div class="d-flex justify-center">
-      <v-btn class="mt-2" type="submit" ripple>Submit</v-btn>
+      <v-hover v-slot="{ isHovering, props }">
+        <v-btn
+          v-bind="props"
+          :color="isHovering ? 'purple-darken-1' : undefined"
+          class="mt-2 submit-button"
+          type="submit"
+          ripple
+          >Submit</v-btn
+        >
+      </v-hover>
     </div>
   </v-form>
+  <v-divider class="mt-5"> </v-divider>
+  <h5 class="mt-2">
+    Don't have an account?<RouterLink to="/register"> Register Here </RouterLink>
+  </h5>
 </template>
+
+<style scoped>
+.submit-button {
+  background-color: #e1bee7;
+}
+</style>
