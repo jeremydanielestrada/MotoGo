@@ -1,109 +1,60 @@
 <script setup>
-import { ref } from 'vue'
-import {
-  confirmedValidator,
-  emailValidator,
-  integerValidator,
-  passwordValidator,
-  requiredValidator,
-} from '@/utils/validator'
-
-const refVform = ref()
-const visible = ref(false)
-
-const formDataDefault = {
-  firstName: '',
-  lastName: '',
-  phoneNumber: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-}
-
-const formData = ref({
-  ...formDataDefault,
-})
-
-const onLogin = () => {}
-
-const onSubmit = () => {
-  refVform.value?.validate().then(({ valid }) => {
-    if (valid) {
-      onLogin()
-    }
-  })
+const rules = {
+  required: (value) => !!value || 'Field is required',
 }
 </script>
-
 <template>
-  <v-form fast-fail @submit.prevent="onSubmit">
-    <v-row>
-      <v-col cols="12" md="6">
-        <v-text-field
-          label="First Name"
-          type="text"
-          variant="outlined"
-          v-model="formData.firstName"
-          :rules="[requiredValidator]"
-        ></v-text-field>
-      </v-col>
+  <v-form fast-fail @submit.prevent>
+    <v-text-field
+      label="First Name"
+      :rules="[rules.required]"
+      type="text"
+      variant="outlined"
+    ></v-text-field>
+    <v-text-field
+      label="Last Name"
+      :rules="[rules.required]"
+      type="text"
+      variant="outlined"
+    ></v-text-field>
 
-      <v-col cols="12" md="6">
-        <v-text-field
-          label="Last Name"
-          type="password"
-          variant="outlined"
-          v-model="formData.lastName"
-          :rules="[requiredValidator]"
-        ></v-text-field>
-      </v-col>
+    <v-text-field
+      label="Phone Number"
+      :rules="[rules.required]"
+      type="phone"
+      variant="outlined"
+    ></v-text-field>
 
-      <v-col cols="12" md="12">
-        <v-text-field
-          label="Phone Number"
-          type="phone"
-          prepend-inner-icon="mdi-phone"
-          variant="outlined"
-          v-model="formData.phoneNumber"
-          :rules="[requiredValidator, integerValidator]"
-        ></v-text-field>
-      </v-col>
+    <v-text-field
+      label="Password"
+      :rules="[rules.required]"
+      type="password"
+      variant="outlined"
+    ></v-text-field>
 
-      <v-col cols="12" md="12">
-        <v-text-field
-          label="Email"
-          type="email"
-          variant="outlined"
-          v-model="formData.email"
-          :rules="[requiredValidator, emailValidator]"
-        ></v-text-field>
-      </v-col>
+    <v-text-field
+      label="Confirm Password"
+      :rules="[rules.required]"
+      type="password"
+      variant="outlined"
+    ></v-text-field>
 
-      <v-col cols="12" md="6">
-        <v-text-field
-          label="Password"
-          type="password"
-          variant="outlined"
-          prepend-inner-icon="mdi-lock-outline"
-          v-model="formData.password"
-          :rules="[requiredValidator, passwordValidator]"
-        ></v-text-field>
-      </v-col>
-      <v-col cols="12" md="6">
-        <v-text-field
-          label="Confirm  Password"
-          :type="visible ? 'text' : 'password'"
-          variant="outlined"
-          prepend-inner-icon="mdi-lock-outline"
-          v-model="formData.confirmPassword"
-          :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
-          @click:append-inner="visible = !visible"
-          :rules="[requiredValidator, confirmedValidator]"
-        ></v-text-field>
-      </v-col>
-      <v-col align="center" justify="center">
-        <v-btn class="mt-2" type="submit" ripple>Submit</v-btn>
-      </v-col>
-    </v-row>
+    <div class="d-flex justify-center">
+      <v-hover v-slot="{ isHovering, props }">
+        <v-btn
+          v-bind="props"
+          :color="isHovering ? 'purple-darken-1' : undefined"
+          class="mt-2 submit-button"
+          type="submit"
+          ripple
+          >Submit</v-btn
+        >
+      </v-hover>
+    </div>
   </v-form>
 </template>
+<style scoped>
+.submit-button {
+  background-color: #e1bee7;
+}
+</style>
