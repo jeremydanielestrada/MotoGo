@@ -9,19 +9,17 @@ import AppLayout from '@/components/layout/AppLayout.vue'
       <v-container>
         <v-row align="center" justify="center">
           <v-col cols="12" sm="6" md="5" lg="5">
-            <template v-slot="title">
-              <v-row>
-                <h1 class="font-weight-bold title-name">
-                  <v-icon class="icon-image" icon="mdi-racing-helmet"></v-icon>MotoGo
-                </h1>
-              </v-row>
-              <v-row>
-                <h1 class="tagline">Ride Smart, Ride Safe</h1>
-              </v-row>
-              <v-row>
-                <img class="image-logo" src="/images/logo11.png" width="95%" />
-              </v-row>
-            </template>
+            <v-row>
+              <h1 class="font-weight-bold title-name">
+                <v-icon class="icon-image" icon="mdi-racing-helmet"></v-icon>MotoGo
+              </h1>
+            </v-row>
+            <v-row>
+              <h1 class="tagline">Ride Smart, Ride Safe</h1>
+            </v-row>
+            <v-row>
+              <img class="image-logo" src="/images/logo11.png" width="95%" />
+            </v-row>
           </v-col>
 
           <v-col cols="12" sm="8" md="6" lg="4">
@@ -58,6 +56,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
   padding-left: 70px;
   text-align: center;
 }
+
 .image-logo {
   padding-left: 20px;
 }
