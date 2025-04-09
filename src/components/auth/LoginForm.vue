@@ -11,6 +11,7 @@
           class="mt-2 submit-button"
           type="submit"
           ripple
+          to="/home"
           >Submit</v-btn
         >
       </v-hover>
