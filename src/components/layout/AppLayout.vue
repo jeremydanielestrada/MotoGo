@@ -12,15 +12,8 @@ function onClick() {
   <v-responsive class="border rounded">
     <v-app :theme="theme" class="bg-purple-lighten-4">
       <!-- Top Row for Theme Toggle Button -->
-      <v-row class="pe-5 pt-4" justify="end">
-        <v-btn
-          :prepend-icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-          elevation="9"
-          @click="onClick"
-          width="40px"
-          color="purple-darken-1"
-          class="border rounded-shaped"
-        ></v-btn>
+      <v-row class="pe-5 pt-4" justify="start">
+        <v-col> </v-col>
       </v-row>
 
       <!-- Main Content -->
