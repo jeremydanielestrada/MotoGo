@@ -37,7 +37,7 @@ const router = createRouter({
     },
     {
       path: '/message',
-      name: 'Message',
+      name: 'Messages',
       component: MessageView,
     },
   ],
