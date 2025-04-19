@@ -1,5 +1,5 @@
 <script setup>
-import HomeView from '@/views/auth/HomeView.vue'
+import HomeView from '@/views/main/HomeView.vue'
 import { requiredValidator, emailValidator } from '@/utils/validator'
 import { useLogin } from '@/composables/auth/login'
 import { ref } from 'vue'
@@ -64,7 +64,6 @@ const isPasswordVisible = ref(false)
                         color="purple-darken-1"
                         type="submit"
                         text="Log in"
-                        to="/home"
                         block
                         ripple
                       ></v-btn>
