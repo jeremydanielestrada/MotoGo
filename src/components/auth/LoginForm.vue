@@ -1,9 +1,13 @@
 <script setup>
 import HomeView from '@/views/auth/HomeView.vue'
+import { requiredValidator, emailValidator } from '@/utils/validator'
+import { useLogin } from '@/composables/auth/login'
 import { ref } from 'vue'
 
 const LogIndialog = ref(false)
 const Registerdialog = ref(true)
+const { formData, formAction, refVForm, onFormSubmit } = useLogin()
+const isPasswordVisible = ref(false)
 </script>
 <template>
   <v-row class="card-border">
@@ -31,21 +35,40 @@ const Registerdialog = ref(true)
               <v-card-text elevate="9">
                 <v-row class="d-flex justify-center">
                   <v-col cols="12" md="4" sm="6" lg="10" class="text-black">
-                    <v-text-field
-                      class="font-weight-bold"
-                      prepend-inner-icon="mdi-account"
-                      label="User name"
-                      type="text"
-                      variant="outlined"
-                    ></v-text-field>
+                    <v-form ref="refVform" fast-fail @submit.prevent="onFormSubmit">
+                      <v-text-field
+                        v-model="formData.email"
+                        class="font-weight-bold"
+                        prepend-inner-icon="mdi-email-outline"
+                        label="Email"
+                        type="email"
+                        variant="outlined"
+                        :rules="[requiredValidator, emailValidator]"
+                      ></v-text-field>
 
-                    <v-text-field
-                      label="Password"
-                      prepend-inner-icon="mdi-lock"
-                      class="font-weight-bold"
-                      type="password"
-                      variant="outlined"
-                    ></v-text-field>
+                      <v-text-field
+                        v-model="formData.password"
+                        label="Password"
+                        prepend-inner-icon="mdi-lock-outline"
+                        :type="isPasswordVisible ? 'text' : 'password'"
+                        :append-inner-icon="
+                          isPasswordVisible ? 'mdi-eye-off-outline' : 'mdi-eye-outline'
+                        "
+                        @click:append-inner="isPasswordVisible = !isPasswordVisible"
+                        class="font-weight-bold"
+                        variant="outlined"
+                        :rules="[requiredValidator]"
+                      ></v-text-field>
+
+                      <v-btn
+                        color="purple-darken-1"
+                        type="submit"
+                        text="Log in"
+                        to="/home"
+                        block
+                        ripple
+                      ></v-btn>
+                    </v-form>
                   </v-col>
                 </v-row>
               </v-card-text>
@@ -55,8 +78,6 @@ const Registerdialog = ref(true)
 
             <v-card-actions class="d-flex justify-center">
               <v-btn text="Close" variant="plain" @click="LogIndialog = false"></v-btn>
-
-              <v-btn class="butn-btn" color="white" text="Save" variant="white" to="/home"></v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -88,9 +109,7 @@ const Registerdialog = ref(true)
   box-shadow: 10px 20px 30px rgb(252, 246, 252);
   backdrop-filter: blur(10px);
 }
-.button-btn {
-  font-size: medium;
-}
+
 .text-white {
   border-color: #8e24aa;
 }

@@ -1,12 +1,23 @@
 <script setup>
 import { ref } from 'vue'
 import DriverRegistrationForm from './DriverRegistrationForm.vue'
+import {
+  requiredValidator,
+  emailValidator,
+  phoneNumberValidator,
+  passwordValidator,
+  confirmedValidator,
+} from '@/utils/validator'
+import { useRegister } from '@/composables/auth/register'
+
 const tab = ref('Passenger')
 const items = ['Passenger', 'Driver']
 const LogIndialog = ref(false)
 const Registerdialog = ref(false)
 const isPasswordVisible = ref(false)
 const isPasswordConfirmVisible = ref(false)
+
+const { formData, formAction, refVForm, onFormSubmit } = useRegister()
 </script>
 
 <template>
@@ -47,38 +58,45 @@ const isPasswordConfirmVisible = ref(false)
                       <v-tabs-window-item value="Passenger">
                         <div flat>
                           <v-card-text>
-                            <v-form fast-fail @submit.prevent>
+                            <v-form ref="refVForm" fast-fail @submit.prevent="onFormSubmit">
                               <v-text-field
+                                v-model="formData.firstname"
                                 class="font-weight-bold"
                                 label="First Name"
                                 type="text"
                                 variant="outlined"
+                                :rules="[requiredValidator]"
                               ></v-text-field>
 
                               <v-text-field
+                                v-model="formData.lastname"
                                 class="font-weight-bold"
                                 label="Last Name"
                                 type="password"
                                 variant="outlined"
+                                :rules="[requiredValidator]"
                               ></v-text-field>
 
                               <v-text-field
+                                v-model="formData.phone"
                                 class="font-weight-bold"
                                 prepend-inner-icon="mdi-phone-outline"
                                 label="Phone Number"
-                                type="phone"
                                 variant="outlined"
+                                :rules="[requiredValidator, phoneNumberValidator]"
                               ></v-text-field>
 
                               <v-text-field
+                                v-model="formData.email"
                                 class="font-weight-bold"
                                 prepend-inner-icon="mdi-email-outline"
                                 label="Email"
-                                type="text"
                                 variant="outlined"
+                                :rules="[requiredValidator, emailValidator]"
                               ></v-text-field>
 
                               <v-text-field
+                                v-model="formData.password"
                                 class="font-weight-bold"
                                 label="Password"
                                 prepend-inner-icon="mdi-lock-outline"
@@ -86,9 +104,11 @@ const isPasswordConfirmVisible = ref(false)
                                 :append-inner-icon="isPasswordVisible ? 'mdi-eye-off' : 'mdi-eye'"
                                 @click:append-inner="isPasswordVisible = !isPasswordVisible"
                                 variant="outlined"
+                                :rules="[requiredValidator, passwordValidator]"
                               ></v-text-field>
 
                               <v-text-field
+                                v-model="formData.password_confirmation"
                                 class="font-weight-bold"
                                 label="Confirm Password"
                                 prepend-inner-icon="mdi-lock-outline"
@@ -100,6 +120,13 @@ const isPasswordConfirmVisible = ref(false)
                                 @click:append-inner="
                                   isPasswordConfirmVisible = !isPasswordConfirmVisible
                                 "
+                                :rules="[
+                                  requiredValidator,
+                                  confirmedValidator(
+                                    formData.password,
+                                    formData.password_confirmation,
+                                  ),
+                                ]"
                               ></v-text-field>
 
                               <v-btn

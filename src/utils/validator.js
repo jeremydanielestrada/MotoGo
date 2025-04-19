@@ -133,3 +133,12 @@ export const imageValidator = (value) => {
 
   return !value || !value.length || value[0].size < 2000000 || 'Image size should be less than 2 MB'
 }
+
+// 👉 Phone Number Validator
+export const phoneNumberValidator = (value) => {
+  if (isEmpty(value)) return true
+
+  const re = /^\+1\s\(\d{3}\)\s\d{3}-\d{4}$/
+
+  return re.test(String(value)) || 'The phone number must be in the format +1 (XXX) XXX-XXXX'
+}
