@@ -1,10 +1,12 @@
 <script setup>
 import { ref } from 'vue'
-
+import DriverRegistrationForm from './DriverRegistrationForm.vue'
 const tab = ref('Passenger')
 const items = ['Passenger', 'Driver']
 const LogIndialog = ref(false)
 const Registerdialog = ref(false)
+const isPasswordVisible = ref(false)
+const isPasswordConfirmVisible = ref(false)
 </script>
 
 <template>
@@ -48,31 +50,6 @@ const Registerdialog = ref(false)
                             <v-form fast-fail @submit.prevent>
                               <v-text-field
                                 class="font-weight-bold"
-                                prepend-inner-icon="mdi-account"
-                                label="Email"
-                                type="text"
-                                variant="outlined"
-                              ></v-text-field>
-
-                              <v-text-field
-                                class="font-weight-bold"
-                                label="Password"
-                                prepend-inner-icon="mdi-lock"
-                                type="password"
-                                variant="outlined"
-                              ></v-text-field>
-                            </v-form>
-                          </v-card-text>
-                        </div>
-                      </v-tabs-window-item>
-
-                      <!-- Entrees Content -->
-                      <v-tabs-window-item value="Driver">
-                        <div flat>
-                          <v-card-text>
-                            <v-form fast-fail @submit.prevent>
-                              <v-text-field
-                                class="font-weight-bold"
                                 label="First Name"
                                 type="text"
                                 variant="outlined"
@@ -87,6 +64,7 @@ const Registerdialog = ref(false)
 
                               <v-text-field
                                 class="font-weight-bold"
+                                prepend-inner-icon="mdi-phone-outline"
                                 label="Phone Number"
                                 type="phone"
                                 variant="outlined"
@@ -94,31 +72,54 @@ const Registerdialog = ref(false)
 
                               <v-text-field
                                 class="font-weight-bold"
+                                prepend-inner-icon="mdi-email-outline"
+                                label="Email"
+                                type="text"
+                                variant="outlined"
+                              ></v-text-field>
+
+                              <v-text-field
+                                class="font-weight-bold"
                                 label="Password"
-                                type="password"
+                                prepend-inner-icon="mdi-lock-outline"
+                                :type="isPasswordVisible ? 'text' : 'password'"
+                                :append-inner-icon="isPasswordVisible ? 'mdi-eye-off' : 'mdi-eye'"
+                                @click:append-inner="isPasswordVisible = !isPasswordVisible"
                                 variant="outlined"
                               ></v-text-field>
 
                               <v-text-field
                                 class="font-weight-bold"
                                 label="Confirm Password"
-                                type="password"
+                                prepend-inner-icon="mdi-lock-outline"
                                 variant="outlined"
+                                :type="isPasswordConfirmVisible ? 'text' : 'password'"
+                                :append-inner-icon="
+                                  isPasswordConfirmVisible ? 'mdi-eye-off' : 'mdi-eye'
+                                "
+                                @click:append-inner="
+                                  isPasswordConfirmVisible = !isPasswordConfirmVisible
+                                "
                               ></v-text-field>
 
-                              <v-file-input
-                                class="font-weight-bold"
-                                :show-size="1000"
-                                color="deep-purple-accent-4"
-                                label="Upload License"
-                                placeholder="Select your files"
-                                prepend-icon="mdi-upload-outline"
-                                counter
-                                multiple
-                                variant="plain"
+                              <v-btn
+                                color="purple-darken-1"
+                                text="REGISTER"
+                                @click="Registerdialog = false"
+                                block
+                                type="submit"
                               >
-                              </v-file-input>
+                              </v-btn>
                             </v-form>
+                          </v-card-text>
+                        </div>
+                      </v-tabs-window-item>
+
+                      <!-- Entrees Content -->
+                      <v-tabs-window-item value="Driver">
+                        <div flat>
+                          <v-card-text>
+                            <DriverRegistrationForm></DriverRegistrationForm>
                           </v-card-text>
                         </div>
                       </v-tabs-window-item>
@@ -132,15 +133,6 @@ const Registerdialog = ref(false)
 
             <v-card-actions class="d-flex justify-center">
               <v-btn text="Close" variant="plain" @click="Registerdialog = false">Close</v-btn>
-              <v-btn
-                class="butn-btn"
-                color="white"
-                text="Save"
-                variant="white"
-                @click="Registerdialog = false"
-              >
-                Save
-              </v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -170,10 +162,7 @@ const Registerdialog = ref(false)
   box-shadow: 10px 20px 30px rgb(252, 246, 252);
   backdrop-filter: blur(10px);
 }
-.button-btn {
-  font-size: medium;
-  border: 1px solid #8e24aa;
-}
+
 .text-white {
   border-color: #8e24aa;
 }
