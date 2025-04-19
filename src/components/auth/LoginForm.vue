@@ -1,5 +1,5 @@
 <script setup>
-import HomeView from '@/views/main/HomeView.vue'
+import HomeView from '@/components/system/dashboard/PassengerDashboard.vue'
 import { requiredValidator, emailValidator } from '@/utils/validator'
 import { useLogin } from '@/composables/auth/login'
 import { ref } from 'vue'

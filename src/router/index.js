@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '@/views/auth/LoginView.vue'
-import HomeView from '@/views/main/HomeView.vue'
+import PassengerDashboard from '@/components/system/dashboard/PassengerDashboard.vue'
 import MessageView from '@/views/auth/MessageView.vue'
 
 const router = createRouter({
@@ -13,9 +13,9 @@ const router = createRouter({
     },
 
     {
-      path: '/home',
-      name: 'Home',
-      component: HomeView,
+      path: '/passenger-dashboard',
+      name: 'PassengerDashboard',
+      component: PassengerDashboard,
     },
     {
       path: '/message',
