@@ -17,7 +17,7 @@ const hideDisplay = ref(false)
           <v-icon>mdi-home</v-icon>
           Home
         </v-btn>
-        <v-btn to="/booking">
+        <v-btn to="/bookings">
           <v-icon>mdi-motorbike</v-icon>
           Booking
         </v-btn>
