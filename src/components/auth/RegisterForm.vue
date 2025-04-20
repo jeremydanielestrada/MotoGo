@@ -9,6 +9,7 @@ import {
   confirmedValidator,
 } from '@/utils/validator'
 import { useRegister } from '@/composables/auth/register'
+import AlertNotification from '../common/AlertNotification.vue'
 
 const tab = ref('Passenger')
 const items = ['Passenger', 'Driver']
@@ -58,6 +59,11 @@ const { formData, formAction, refVForm, onFormSubmit } = useRegister()
                       <v-tabs-window-item value="Passenger">
                         <div flat>
                           <v-card-text>
+                            <AlertNotification
+                              :form-success-message="formAction.formSuccessMessage"
+                              :form-error-message="formAction.formErrorMessage"
+                            ></AlertNotification>
+
                             <v-form ref="refVForm" fast-fail @submit.prevent="onFormSubmit">
                               <v-text-field
                                 v-model="formData.firstname"
@@ -72,7 +78,7 @@ const { formData, formAction, refVForm, onFormSubmit } = useRegister()
                                 v-model="formData.lastname"
                                 class="font-weight-bold"
                                 label="Last Name"
-                                type="password"
+                                type="text"
                                 variant="outlined"
                                 :rules="[requiredValidator]"
                               ></v-text-field>
