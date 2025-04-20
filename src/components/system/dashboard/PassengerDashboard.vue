@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useDisplay } from 'vuetify'
+import DashboardLayout from '@/components/layout/DashboardLayout.vue'
 
 const { mobile } = useDisplay()
 const imageItems = [
@@ -25,70 +26,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-app>
-    <v-container fluid>
-      <!-- Bottom Navigation for Mobile -->
-      <v-bottom-navigation v-if="mobile" grow class="mobile-nav">
-        <v-btn class="active-btn">
-          <v-icon>mdi-home</v-icon>
-          Home
-        </v-btn>
-        <v-btn to="/booking">
-          <v-icon>mdi-motorbike</v-icon>
-          Booking
-        </v-btn>
-        <v-btn icon to="/message">
-          <v-icon>mdi-chat</v-icon>
-          Message
-        </v-btn>
-        <v-btn icon>
-          <v-icon>mdi-account</v-icon>
-          Profile
-        </v-btn>
-      </v-bottom-navigation>
-
-      <!-- App Bar -->
-      <v-app-bar>
-        <v-col
-          :cols="mobile ? 12 : 3"
-          md="2"
-          sm="3"
-          xs="4"
-          class="d-flex justify-center align-center"
-        >
-          <div>
-            <img class="pt-4" src="/public/images/motoGO.png" alt="MotoGo Logo" width="40px" />
-          </div>
-          <h1 class="text-italic text-purple-darken-3">MotoGo</h1>
-        </v-col>
-        <v-spacer></v-spacer>
-        <v-col
-          cols="3"
-          md="2"
-          sm="3"
-          xs="4"
-          class="d-flex justify-center align-center ga-1 mx-3"
-          v-if="mobile ? hideDisplay : !hideDisplay"
-        >
-          <v-btn class="active-btn">
-            <v-icon>mdi-home</v-icon>
-            Home
-          </v-btn>
-          <v-btn to="/booking">
-            <v-icon>mdi-motorbike</v-icon>
-            Booking
-          </v-btn>
-          <v-btn icon>
-            <v-icon size="30">mdi-account</v-icon>
-          </v-btn>
-          <v-btn icon to="/message">
-            <v-icon size="30">mdi-chat</v-icon>
-          </v-btn>
-        </v-col>
-      </v-app-bar>
-
-      <!-- Carousel -->
-      <v-row class="mt-16">
+  <DashboardLayout>
+    <template #content>
+      <v-row class="mt-5">
         <v-col :cols="mobile ? 12 : 8" class="mx-auto">
           <v-carousel
             :height="mobile ? '200' : '300'"
@@ -185,8 +125,13 @@ onMounted(() => {
           </v-col>
         </v-row>
       </v-slide-y-transition>
-    </v-container>
-  </v-app>
+    </template>
+  </DashboardLayout>
+  <!-- Bottom Navigation for Mobile -->
+
+  <!-- App Bar -->
+
+  <!-- Carousel -->
 </template>
 
 <style scoped>
@@ -226,12 +171,6 @@ onMounted(() => {
     height: 250px;
     width: 250px;
   }
-}
-
-.active-btn {
-  background-color: #6a1b9a !important;
-  color: white !important;
-  border-radius: 8px;
 }
 
 .responsive-image.hover-effect {
