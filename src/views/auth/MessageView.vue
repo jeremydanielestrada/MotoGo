@@ -22,7 +22,7 @@ function resetIcon() {
 </script>
 
 <template>
-  <v-row class="bg-bg1" no-gutters>
+  <v-row no-gutters>
     <!-- LIST OF MESSAGES -->
     <v-col cols="12" md="4">
       <v-card class="my-4 mx-2" elevation="10" max-width="500" height="620">
