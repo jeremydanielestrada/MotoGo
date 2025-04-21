@@ -1,10 +1,24 @@
 <script setup>
 import { ref } from 'vue'
 
+import MessageLayout from '@/components/layout/MessageLayout.vue'
+import avatarImage from '/images/ava.png'
+import { useDisplay } from 'vuetify'
+
+const { mobile } = useDisplay()
+
 const message = ref('')
-const messages = ref([])
+const messages = ref([
+  {
+    text: 'Hello, how can I help you today?',
+    from: 'Avatar',
+    ava: avatarImage,
+  },
+])
 
 const iconIndex = ref(0)
+
+const hideDisplay = ref(false)
 
 function sendMessage() {
   if (message.value.trim() !== '') {
@@ -22,85 +36,125 @@ function resetIcon() {
 </script>
 
 <template>
-  <v-row no-gutters>
-    <!-- LIST OF MESSAGES -->
-    <v-col cols="12" md="4">
-      <v-card class="my-4 mx-2" elevation="10" max-width="500" height="620">
-        <v-row>
-          <v-col cols="12" md="4" sm="6" class="pt-4 ml-4 mt-4">
-            <router-link to="passenger-dashboard"
-              ><v-icon size="30">mdi-keyboard-backspace</v-icon></router-link
-            >
-          </v-col>
-          <v-col cols="12" md="4" sm="6" class="d-flex justify-center mt-4">
-            <h2>Messages</h2>
-          </v-col>
-        </v-row>
-        <div class="d-flex align-center px-4 pt-4">
-          <img src="/public/images/ava.png" alt="Avatar" width="60" class="avatar-img" />
-          <div class="title-container">
-            <v-card-title>Ava Tar</v-card-title>
-            <v-card-subtitle class="text-subtitle-2">Naa diri sir hahahhaha</v-card-subtitle>
-          </div>
-          <v-spacer></v-spacer>
-        </div>
-      </v-card>
-    </v-col>
+  <MessageLayout>
+    <template #content>
+      <v-row
+        class="d-flex"
+        style="
+          position: fixed;
+          top: 60px;
+          left: 0;
+          width: 100%;
+          height: calc(100vh - 60px);
+          overflow: hidden;
+          margin: 0;
+          padding: 0;
+        "
+      >
+        <!-- SIDEBAR -->
+        <v-col
+          cols="12"
+          md="3"
+          class="d-flex flex-column bg-light"
+          style="border-right: 1px solid #ddd; overflow-y: auto; padding: 0"
+          v-if="mobile ? hideDisplay : !hideDisplay"
+        >
+          <v-card flat class="py-4 px-3" elevation="0">
+            <v-row>
+              <v-col cols="12" class="d-flex align-center">
+                <router-link to="passenger-dashboard">
+                  <v-icon size="30" class="mr-2">mdi-keyboard-backspace</v-icon>
+                </router-link>
+                <h2 class="text-h6 font-weight-bold mb-0">Messages</h2>
+              </v-col>
+            </v-row>
+          </v-card>
+          <v-divider></v-divider>
+          <v-card
+            flat
+            class="py-3 mt-3 mx-3 cursor-pointer"
+            elevation="0"
+            v-for="(msg, index) in messages"
+            :key="index"
+            style="border: 1px solid #ddd; border-radius: 8px"
+          >
+            <div class="d-flex align-center">
+              <img :src="msg.ava" alt="Avatar" width="50" class="avatar-img mr-3" />
+              <div class="title-container">
+                <v-card-title class="text-h6 mb-1">{{ msg.from }}</v-card-title>
+                <v-card-subtitle class="text-subtitle-2 text-truncate">
+                  {{ msg.text }}
+                </v-card-subtitle>
+              </div>
+            </div>
+          </v-card>
+        </v-col>
 
-    <!-- PROFILE HEADER -->
-    <v-col cols="12" md="8">
-      <v-card class="my-4 d-flex flex-column" elevation="10" max-width="880" height="620">
-        <!-- Header -->
-        <div class="d-flex align-center px-4 pt-4">
-          <img src="/public/images/ava.png" alt="Avatar" width="60" class="avatar-img" />
-          <div class="title-container">
-            <v-card-title>Ava Tar</v-card-title>
-            <v-card-subtitle class="text-subtitle-2">+09465775869</v-card-subtitle>
-          </div>
-          <v-spacer></v-spacer>
-          <v-icon class="pr-5">mdi-phone-outline</v-icon>
-        </div>
+        <!-- CHAT AREA -->
+        <v-col cols="12" md="9" class="d-flex flex-column" style="padding: 0; margin: 0">
+          <!-- HEADER -->
+          <v-card
+            flat
+            class="d-flex align-center py-3"
+            elevation="0"
+            style="border-bottom: 1px solid #ddd; margin: 0"
+          >
+            <img src="/public/images/ava.png" alt="Avatar" width="50" class="avatar-img mr-3" />
+            <div class="title-container">
+              <v-card-title class="text-h6 mb-1">Ava Tar</v-card-title>
+              <v-card-subtitle class="text-subtitle-2">+09465775869</v-card-subtitle>
+            </div>
+            <v-spacer></v-spacer>
+            <v-icon size="24" class="me-3">mdi-phone-outline</v-icon>
+          </v-card>
 
-        <v-divider class="my-2" color="purple"></v-divider>
+          <v-divider></v-divider>
 
-        <!-- MESSAGE SENT-->
-        <div class="d-flex flex-column flex-grow-1 px-4 pb-4">
-          <!-- Message Display Area -->
-          <div class="flex-grow-1 overflow-y-auto d-flex flex-column">
+          <!-- MESSAGE DISPLAY AREA -->
+          <div
+            class="flex-grow-1 px-4 py-3"
+            style="background-color: #f5f5f5; margin: 0; padding: 0"
+          >
             <div
               v-for="(msg, index) in messages"
               :key="index"
-              class="my-2 pa-2 align-self-end bg-purple-darken-4 rounded-pill"
+              :class="[
+                'my-2 pa-2 rounded-pill',
+                msg.from === 'me'
+                  ? 'align-self-end bg-purple-darken-4 text-white'
+                  : 'align-self-start bg-light text-black',
+                ' bg-purple-darken-4 text-white',
+              ]"
               style="max-width: 70%"
             >
               {{ msg.text }}
             </div>
           </div>
-          <v-divider></v-divider>
-        </div>
 
-        <!-- Input Field at Bottom -->
-        <v-sheet class="d-flex align-center px-4" elevation="2">
-          <v-text-field
-            v-model="message"
-            :append-icon="message ? 'mdi-send' : 'mdi-microphone'"
-            type="text"
-            variant="solo"
-            density="compact"
-            rounded="pill"
-            class="mt-3 flex-grow-1"
-            @click:append="sendMessage"
-          />
-        </v-sheet>
-      </v-card>
-    </v-col>
-  </v-row>
+          <!-- INPUT FIELD -->
+          <v-sheet
+            class="d-flex align-center px-4 py-3 mb-0"
+            elevation="2"
+            style="background-color: white; margin: 0; padding: 0"
+          >
+            <v-text-field
+              v-model="message"
+              :append-icon="message ? 'mdi-send' : 'mdi-microphone'"
+              type="text"
+              variant="outlined"
+              density="compact"
+              rounded="pill"
+              class="flex-grow-1"
+              @click:append="sendMessage"
+            />
+          </v-sheet>
+        </v-col>
+      </v-row>
+    </template>
+  </MessageLayout>
 </template>
+
 <style scoped>
-/* .border-card {
-  border: 5px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
-} */
 .avatar-img {
   border-radius: 100%;
   padding: 5px;

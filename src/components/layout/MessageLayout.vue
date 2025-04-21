@@ -1,57 +1,106 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useDisplay } from 'vuetify'
 
-const { mobile } = useDisplay()
+const { mdAndUp, smAndDown } = useDisplay()
+const drawer = ref(false)
 
-// Define hideDisplay (example: set to false by default)
+function onClick() {
+  theme.value = theme.value === 'light' ? 'dark' : 'light'
+  localStorage.setItem('theme', theme.value)
+}
+
+onMounted(() => {
+  drawer.value = false // Always start with drawer closed
+})
+
+watch(
+  mdAndUp,
+  (isDesktop) => {
+    if (isDesktop) {
+      drawer.value = false // Always close drawer on desktop
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
-  <v-responsive>
-    <v-app>
-      <!-- Bottom Navigation for Mobile -->
+  <v-app>
+    <v-app-bar>
+      <template v-slot:prepend>
+        <v-app-bar-nav-icon
+          v-show="smAndDown"
+          @click="drawer = !drawer"
+          class="me-14"
+        ></v-app-bar-nav-icon>
+      </template>
 
-      <!-- App Bar -->
-      <v-app-bar>
-        <v-col
-          :cols="mobile ? 12 : 3"
-          md="2"
-          sm="3"
-          xs="4"
-          class="d-flex justify-center align-center"
-        >
-          <div>
-            <img class="pt-4" src="/public/images/motoGO.png" alt="MotoGo Logo" width="40px" />
+      <v-row class="d-flex justify-start align-start mx-auto">
+        <v-col cols="12" md="12" sm="12" xs="12">
+          <div class="d-flex justify- align-center">
+            <img class="mr-2" src="/public/images/motoGO.png" alt="MotoGo Logo" width="40px" />
+            <h1 class="text-italic text-purple-darken-3">MotoGo</h1>
           </div>
-          <h1 class="text-italic text-purple-darken-3">MotoGo</h1>
         </v-col>
-      </v-app-bar>
-      <v-main>
-        <v-container fluid>
-          <slot name="content"></slot>
-        </v-container>
-      </v-main>
-    </v-app>
-  </v-responsive>
+      </v-row>
+      <v-spacer></v-spacer>
+
+      <!-- <v-icon class="mx-10" v-show="mdAndUp" size="40" @click="showFormModal = true"
+        >mdi-account-circle-outline</v-icon
+      > -->
+    </v-app-bar>
+
+    <v-navigation-drawer
+      v-if="smAndDown"
+      v-model="drawer"
+      :location="smAndDown ? 'left' : null"
+      :width="250"
+    >
+      <v-list>
+        <v-list-item link to="/" title="Home" prepend-icon="mdi-home-circle-outline"></v-list-item>
+        <v-list-item
+          link
+          to="/about"
+          title="About"
+          prepend-icon="mdi-information-outline"
+        ></v-list-item>
+        <v-list-item
+          link
+          to="/contact"
+          title="Contact"
+          prepend-icon="mdi-card-account-mail-outline"
+        ></v-list-item>
+        <v-list-item
+          prepend-icon="mdi-account-circle-outline"
+          link
+          to="/auth/login"
+          title="Log in/Sign up"
+        ></v-list-item>
+      </v-list>
+    </v-navigation-drawer>
+
+    <v-main>
+      <slot name="content"></slot>
+    </v-main>
+  </v-app>
 </template>
 
-<style scoped>
-.text-italic {
-  font-style: italic;
-  font-weight: 600;
+<style>
+#nav-items ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 1.5rem;
 }
 
-.mobile-nav {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  z-index: 10;
+#nav-items ul li {
+  cursor: pointer;
+  margin: 0 1rem;
 }
 
-.active-btn {
-  background-color: #6a1b9a !important;
-  color: white !important;
-  border-radius: 8px;
+.v-main {
+  background-color: var(--v-background);
+  min-height: calc(100vh - 104px); /* Subtract header and footer height */
 }
 </style>
