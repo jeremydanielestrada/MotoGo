@@ -1,13 +1,22 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { useDisplay } from 'vuetify'
+import { useDisplay } from 'vuetify' // Import useDisplay from Vuetify
 
 const { mdAndUp, smAndDown } = useDisplay()
 const drawer = ref(false)
 
+// Define emit for the toggle-navigation event
+const emit = defineEmits(['toggle-navigation'])
+
 function onClick() {
   theme.value = theme.value === 'light' ? 'dark' : 'light'
   localStorage.setItem('theme', theme.value)
+}
+
+function toggleDrawer() {
+  drawer.value = !drawer.value
+  // Emit an event to notify the parent component
+  emit('toggle-navigation', drawer.value)
 }
 
 onMounted(() => {
@@ -27,61 +36,24 @@ watch(
 
 <template>
   <v-app>
-    <v-app-bar>
-      <template v-slot:prepend>
-        <v-app-bar-nav-icon
-          v-show="smAndDown"
-          @click="drawer = !drawer"
-          class="me-14"
-        ></v-app-bar-nav-icon>
+    <v-app-bar color="purple-darken-3">
+      <template v-slot:append>
+        <v-icon v-show="smAndDown" @click="toggleDrawer" class="me-4" size="30"
+          >mdi-message-outline</v-icon
+        >
       </template>
+      <v-icon class="ms-4" size="30" v-if="mdAndUp ? false : true">mdi-keyboard-backspace</v-icon>
 
-      <v-row class="d-flex justify-start align-start mx-auto">
-        <v-col cols="12" md="12" sm="12" xs="12">
-          <div class="d-flex justify- align-center">
-            <img class="mr-2" src="/public/images/motoGO.png" alt="MotoGo Logo" width="40px" />
-            <h1 class="text-italic text-purple-darken-3">MotoGo</h1>
-          </div>
-        </v-col>
-      </v-row>
       <v-spacer></v-spacer>
+      <h1 class="text-h6 font-weight-bold me-5">Messages</h1>
 
       <!-- <v-icon class="mx-10" v-show="mdAndUp" size="40" @click="showFormModal = true"
         >mdi-account-circle-outline</v-icon
       > -->
     </v-app-bar>
 
-    <v-navigation-drawer
-      v-if="smAndDown"
-      v-model="drawer"
-      :location="smAndDown ? 'left' : null"
-      :width="250"
-    >
-      <v-list>
-        <v-list-item link to="/" title="Home" prepend-icon="mdi-home-circle-outline"></v-list-item>
-        <v-list-item
-          link
-          to="/about"
-          title="About"
-          prepend-icon="mdi-information-outline"
-        ></v-list-item>
-        <v-list-item
-          link
-          to="/contact"
-          title="Contact"
-          prepend-icon="mdi-card-account-mail-outline"
-        ></v-list-item>
-        <v-list-item
-          prepend-icon="mdi-account-circle-outline"
-          link
-          to="/auth/login"
-          title="Log in/Sign up"
-        ></v-list-item>
-      </v-list>
-    </v-navigation-drawer>
-
     <v-main>
-      <slot name="content"></slot>
+      <slot name="content" :drawer="drawer"></slot>
     </v-main>
   </v-app>
 </template>

@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
-
 import MessageLayout from '@/components/layout/MessageLayout.vue'
+import MessageNavigation from '@/components/layout/navigations/MessageNavigation.vue'
 import avatarImage from '/images/ava.png'
 import { useDisplay } from 'vuetify'
 
@@ -17,8 +17,8 @@ const messages = ref([
 ])
 
 const iconIndex = ref(0)
-
 const hideDisplay = ref(false)
+const drawer = ref(false) // Control visibility of MessageNavigation
 
 function sendMessage() {
   if (message.value.trim() !== '') {
@@ -33,10 +33,14 @@ function clearMessage() {
 function resetIcon() {
   iconIndex.value = 0
 }
+
+function handleToggleNavigation(state) {
+  drawer.value = state
+}
 </script>
 
 <template>
-  <MessageLayout>
+  <MessageLayout @toggle-navigation="handleToggleNavigation">
     <template #content>
       <v-row
         class="d-flex"
@@ -65,7 +69,7 @@ function resetIcon() {
                 <router-link to="passenger-dashboard">
                   <v-icon size="30" class="mr-2">mdi-keyboard-backspace</v-icon>
                 </router-link>
-                <h2 class="text-h6 font-weight-bold mb-0">Messages</h2>
+                <h2 class="text-h6 font-weight-bold mb-0">Chats</h2>
               </v-col>
             </v-row>
           </v-card>
@@ -89,6 +93,8 @@ function resetIcon() {
             </div>
           </v-card>
         </v-col>
+
+        <MessageNavigation v-model="drawer"></MessageNavigation>
 
         <!-- CHAT AREA -->
         <v-col cols="12" md="9" class="d-flex flex-column" style="padding: 0; margin: 0">
