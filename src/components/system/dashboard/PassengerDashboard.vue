@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useDisplay } from 'vuetify'
-import DashboardLayout from '@/components/layout/DashboardLayout.vue'
+import DashboardLayout from '@/components/layout/dashboards/DashboardLayout.vue'
 
 const { mobile } = useDisplay()
 const imageItems = [

@@ -8,11 +8,6 @@ const drawer = ref(false)
 // Define emit for the toggle-navigation event
 const emit = defineEmits(['toggle-navigation'])
 
-function onClick() {
-  theme.value = theme.value === 'light' ? 'dark' : 'light'
-  localStorage.setItem('theme', theme.value)
-}
-
 function toggleDrawer() {
   drawer.value = !drawer.value
   // Emit an event to notify the parent component

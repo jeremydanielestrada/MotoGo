@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { LMap, LTileLayer, LMarker, LPopup, LIcon, LPolyline } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
-import DashboardLayout from '@/components/layout/DashboardLayout.vue'
+import DashboardLayout from '@/components/layout/dashboards/DashboardLayout.vue'
 
 // Fix for Leaflet marker icons
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
