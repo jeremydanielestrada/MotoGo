@@ -125,7 +125,7 @@ const zoom = ref(6) // Add zoom level
               </div>
               <v-divider></v-divider>
 
-              <p>Ride Status</p>
+              <p>Booking Status</p>
             </v-card-text>
           </v-card>
         </v-col>

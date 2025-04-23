@@ -51,7 +51,7 @@ export function useDriverRegister() {
       // Add Success Message
       formAction.value.formSuccessMessage = 'Successfully Registered Account.'
       // Redirect Acct to Dashboard
-      router.replace('/dashboard')
+      router.replace('/rider-dashboard')
     }
 
     // Reset Form

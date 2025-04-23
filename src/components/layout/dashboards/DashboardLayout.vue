@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useDisplay } from 'vuetify'
 import TopProfileNavigation from '../navigations/TopProfileNavigation.vue'
+import { isAuthenticated } from '@/utils/supabase'
 
 const { mobile } = useDisplay()
 
@@ -13,6 +14,16 @@ const items = ref([
 
 // Define hideDisplay (example: set to false by default)
 const hideDisplay = ref(false)
+
+const isLoggedIn = ref(false)
+
+const getLoggedStatus = async () => {
+  isLoggedIn.value = await isAuthenticated()
+}
+
+onMounted(() => {
+  getLoggedStatus()
+})
 </script>
 
 <template>
