@@ -5,7 +5,6 @@ import AlertNotification from '../common/AlertNotification.vue'
 import { ref } from 'vue'
 
 const LogIndialog = ref(false)
-const Registerdialog = ref(true)
 const { formData, formAction, refVForm, onFormSubmit } = useLogin()
 const isPasswordVisible = ref(false)
 </script>

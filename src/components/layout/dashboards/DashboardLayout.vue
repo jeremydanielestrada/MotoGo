@@ -1,8 +1,8 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useDisplay } from 'vuetify'
-import TopProfileNavigation from '../navigations/TopProfileNavigation.vue'
 import { isAuthenticated } from '@/utils/supabase'
+import ProfileNavigation from '../navigations/ProfileNavigation.vue'
 
 const { mobile } = useDisplay()
 
@@ -43,10 +43,8 @@ onMounted(() => {
           <v-icon>mdi-chat-outline</v-icon>
           Message
         </v-btn>
-        <v-btn icon>
-          <v-icon>mdi-account</v-icon>
-          Profile
-        </v-btn>
+        <!-- ProfileNavigation   Pending-->
+        <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>
       </v-bottom-navigation>
 
       <!-- App Bar -->
@@ -91,21 +89,21 @@ onMounted(() => {
           </v-menu>
         </div>
 
+        <v-spacer></v-spacer>
+        <!-- mobile-notification-bell -->
         <v-btn color="primary" v-if="mobile" to="/mobile-notifications">
           <v-icon size="30" color="purple-darken-3">mdi-bell-outline</v-icon>
         </v-btn>
-
-        <v-spacer></v-spacer>
 
         <v-col
           cols="3"
           md="2"
           sm="3"
           xs="4"
-          class="d-flex justify-center align-center ga-1 mx-6"
+          class="d-flex justify-center align-center me-12"
           v-if="mobile ? hideDisplay : !hideDisplay"
         >
-          <v-btn class="active-btn">
+          <v-btn>
             <v-icon>mdi-home</v-icon>
             Home
           </v-btn>
@@ -113,13 +111,13 @@ onMounted(() => {
             <v-icon>mdi-motorbike</v-icon>
             Booking
           </v-btn>
-          <v-btn icon to="/message">
-            <v-icon size="30">mdi-chat-outline</v-icon>
+          <v-btn to="/message">
+            <v-icon>mdi-chat-outline</v-icon>
+            Message
           </v-btn>
+          <!-- ProfileNavigation   Pending-->
+          <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>
         </v-col>
-
-        <!-- ProfileNavigation   Pending-->
-        <!-- <TopProfileNavigation></TopProfileNavigation> -->
       </v-app-bar>
       <v-main>
         <v-container fluid>
@@ -129,27 +127,3 @@ onMounted(() => {
     </v-app>
   </v-responsive>
 </template>
-
-<style scoped>
-.text-italic {
-  font-style: italic;
-  font-weight: 600;
-}
-
-.mobile-nav {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  z-index: 10;
-}
-
-.active-btn {
-  background-color: #6a1b9a !important;
-  color: white !important;
-  border-radius: 8px;
-}
-
-.position-relative {
-  position: relative;
-}
-</style>
