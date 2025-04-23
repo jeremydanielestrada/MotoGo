@@ -11,6 +11,11 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
+const colors = ['indigo', 'warning', 'pink darken-2']
+const slides = ['/public/images/c10.png', '/public/images/c16.png']
+import { useDisplay } from 'vuetify'
+const { mobile } = useDisplay()
+
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
@@ -271,11 +276,6 @@ const setPickupToCurrentLocation = () => {
     alert('Geolocation is not supported by your browser.')
   }
 }
-
-const colors = ['indigo', 'warning', 'pink darken-2']
-const slides = ['/public/images/c10.png', '/public/images/c16.png']
-import { useDisplay } from 'vuetify'
-const { mobile } = useDisplay()
 </script>
 
 <template>

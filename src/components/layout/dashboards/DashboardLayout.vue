@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useDisplay } from 'vuetify'
+import TopProfileNavigation from '../navigations/TopProfileNavigation.vue'
 
 const { mobile } = useDisplay()
 
@@ -86,7 +87,7 @@ const hideDisplay = ref(false)
           md="2"
           sm="3"
           xs="4"
-          class="d-flex justify-center align-center ga-1 mx-3"
+          class="d-flex justify-center align-center ga-1 mx-6"
           v-if="mobile ? hideDisplay : !hideDisplay"
         >
           <v-btn class="active-btn">
@@ -97,13 +98,13 @@ const hideDisplay = ref(false)
             <v-icon>mdi-motorbike</v-icon>
             Booking
           </v-btn>
-          <v-btn icon>
-            <v-icon size="30">mdi-account</v-icon>
-          </v-btn>
           <v-btn icon to="/message">
             <v-icon size="30">mdi-chat-outline</v-icon>
           </v-btn>
         </v-col>
+
+        <!-- ProfileNavigation   Pending-->
+        <!-- <TopProfileNavigation></TopProfileNavigation> -->
       </v-app-bar>
       <v-main>
         <v-container fluid>
