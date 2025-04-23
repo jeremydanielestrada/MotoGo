@@ -9,34 +9,34 @@ const center = ref([12.8797, 121.774]) // Default center (Philippines)
 const zoom = ref(6) // Add zoom level
 
 // Fetch location suggestions
-const fetchSuggestions = async (query, type) => {
-  if (!query) {
-    if (type === 'pickup') pickupSuggestions.value = []
-    else dropoffSuggestions.value = []
-    return
-  }
+// const fetchSuggestions = async (query, type) => {
+//   if (!query) {
+//     if (type === 'pickup') pickupSuggestions.value = []
+//     else dropoffSuggestions.value = []
+//     return
+//   }
 
-  try {
-    const response = await axios.get('https://api.opencagedata.com/geocode/v1/json', {
-      params: {
-        q: query,
-        key: GEOCODING_API_KEY,
-        limit: 5,
-      },
-    })
+//   try {
+//     const response = await axios.get('https://api.opencagedata.com/geocode/v1/json', {
+//       params: {
+//         q: query,
+//         key: GEOCODING_API_KEY,
+//         limit: 5,
+//       },
+//     })
 
-    const suggestions = response.data.results.map((result) => ({
-      name: result.formatted,
-      lat: result.geometry.lat,
-      lng: result.geometry.lng,
-    }))
+//     const suggestions = response.data.results.map((result) => ({
+//       name: result.formatted,
+//       lat: result.geometry.lat,
+//       lng: result.geometry.lng,
+//     }))
 
-    if (type === 'pickup') pickupSuggestions.value = suggestions
-    else dropoffSuggestions.value = suggestions
-  } catch (error) {
-    console.error('Error fetching suggestions:', error)
-  }
-}
+//     if (type === 'pickup') pickupSuggestions.value = suggestions
+//     else dropoffSuggestions.value = suggestions
+//   } catch (error) {
+//     console.error('Error fetching suggestions:', error)
+//   }
+// }
 </script>
 
 <template>
