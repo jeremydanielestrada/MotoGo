@@ -54,7 +54,7 @@ const hideDisplay = ref(false)
         </v-col>
 
         <!-- Notification Button and Menu -->
-        <div class="text-center ms-4">
+        <div class="text-center ms-4" v-if="!mobile">
           <v-menu location="end" offset-y width="300px" transition="scale-transition">
             <template v-slot:activator="{ props }">
               <v-btn color="primary" v-bind="props">
@@ -79,6 +79,10 @@ const hideDisplay = ref(false)
             </v-list>
           </v-menu>
         </div>
+
+        <v-btn color="primary" v-if="mobile" to="/mobile-notifications">
+          <v-icon size="30" color="purple-darken-3">mdi-bell-outline</v-icon>
+        </v-btn>
 
         <v-spacer></v-spacer>
 
