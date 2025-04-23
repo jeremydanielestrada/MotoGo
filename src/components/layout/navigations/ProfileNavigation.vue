@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getAvatarText } from '@/utils/helpers'
-import { supabase, formActionDefault } from '@/utils/supabase'
+import { supabase, formActionDefault, getuserInformation } from '@/utils/supabase'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
@@ -32,11 +32,7 @@ const onLogout = async () => {
 
 //getting user information functionality
 const getuser = async () => {
-  const {
-    data: {
-      user: { user_metadata: metadata },
-    },
-  } = await supabase.auth.getUser()
+  const metadata = await getuserInformation()
 
   userData.value.email = metadata.email
   userData.value.fullname = metadata.firstname + ' ' + metadata.lastname

@@ -37,7 +37,7 @@ export function useLogin() {
       // Add Success Message
       formAction.value.formSuccessMessage = 'Successfully Logged Account.'
       // Redirect Acct to Dashboard
-      router.replace('/passenger-dashboard')
+      router.replace('/system/passenger-dashboard')
     }
 
     // Reset Form
