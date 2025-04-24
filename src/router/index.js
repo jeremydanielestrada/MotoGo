@@ -67,9 +67,9 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const isLoggedIn = await isAuthenticated()
 
-  if (to.name === 'home' && isLoggedIn) {
-    return isDriver ? { name: 'RiderDashboard' } : { name: 'PassengerDashboard' }
-  }
+  // if (to.name === 'home' && isLoggedIn) {
+  //   return isDriver ? { name: 'RiderDashboard' } : { name: 'PassengerDashboard' }
+  // }
 
   if (!isLoggedIn) {
     // If route requires auth but user is not logged in

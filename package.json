@@ -13,6 +13,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
     "@vue-leaflet/vue-leaflet": "^0.10.1",
+    "@vueuse/core": "^13.1.0",
     "axios": "^1.8.4",
     "leaflet": "^1.9.4",
     "pinia": "^2.3.1",

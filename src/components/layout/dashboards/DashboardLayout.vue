@@ -62,8 +62,10 @@ onMounted(() => {
           <h1 class="text-italic text-purple-darken-3">MotoGo</h1>
         </v-col>
 
+        <v-spacer></v-spacer>
+
         <!-- Notification Button and Menu -->
-        <div class="text-center ms-4" v-if="!mobile">
+        <div class="text-center" v-if="!mobile">
           <v-menu location="end" offset-y width="300px" transition="scale-transition">
             <template v-slot:activator="{ props }">
               <v-btn color="primary" v-bind="props">
@@ -89,25 +91,24 @@ onMounted(() => {
           </v-menu>
         </div>
 
-        <v-spacer></v-spacer>
         <!-- mobile-notification-bell -->
         <v-btn color="primary" v-if="mobile" to="/mobile-notifications">
           <v-icon size="30" color="purple-darken-3">mdi-bell-outline</v-icon>
         </v-btn>
 
         <v-col
-          cols="3"
-          md="2"
+          cols="12"
+          md="4"
           sm="3"
           xs="4"
-          class="d-flex justify-center align-center me-12"
+          class="d-flex justify-center align-center"
           v-if="mobile ? hideDisplay : !hideDisplay"
         >
           <v-btn>
             <v-icon>mdi-home</v-icon>
             Home
           </v-btn>
-          <v-btn to="/booking">
+          <v-btn to="/bookings">
             <v-icon>mdi-motorbike</v-icon>
             Booking
           </v-btn>
