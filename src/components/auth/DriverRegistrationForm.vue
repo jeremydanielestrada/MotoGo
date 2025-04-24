@@ -8,6 +8,7 @@ import {
   passwordValidator,
   confirmedValidator,
 } from '@/utils/validator'
+import AlertNotification from '../common/AlertNotification.vue'
 
 const isPasswordVisible = ref(false)
 const isPasswordConfirmVisible = ref(false)
@@ -16,6 +17,10 @@ const { formData, formAction, refVForm, onFormSubmit } = useDriverRegister()
 </script>
 
 <template>
+  <AlertNotification
+    :form-success-message="formAction.formSuccessMessage"
+    :form-error-message="formAction.formErrorMessage"
+  ></AlertNotification>
   <v-form fast-fail @submit.prevent="onFormSubmit" ref="refVForm">
     <v-text-field
       v-model="formData.firstname"

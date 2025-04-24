@@ -50,7 +50,7 @@ export function useRegister() {
       // Add Success Message
       formAction.value.formSuccessMessage = 'Successfully Registered Account.'
       // Redirect Acct to Dashboard
-      router.replace('/dashboard')
+      router.replace('/system/passenger-dashboard')
     }
 
     // Reset Form
