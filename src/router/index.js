@@ -22,33 +22,36 @@ const router = createRouter({
       path: '/system/passenger-dashboard',
       name: 'PassengerDashboard',
       component: PassengerDashboard,
+      meta: { requiresAuth: true },
     },
     {
       path: '/message',
       name: 'Messages',
       component: MessageView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/bookings',
       name: 'bookings',
       component: Bookings,
+      meta: { requiresAuth: true },
     },
 
     {
       path: '/system/rider-dashboard',
       name: 'RiderDashboard',
       component: RiderDashboard,
+      meta: { requiresAuth: true, requiresDriver: true },
     },
 
     {
       path: '/mobile-notifications',
       name: 'MobileNotifacations',
       component: MobileNotifacations,
+      meta: { requiresAuth: true },
     },
-
     {
-      path: '/not-found',
-      name: 'not-found',
+      path: '/:catchAll(.*)',
       component: NotFoundView,
     },
 
@@ -60,69 +63,46 @@ const router = createRouter({
   ],
 })
 
+//navigation guard
 router.beforeEach(async (to) => {
   const isLoggedIn = await isAuthenticated()
-  const userMetaData = await getuserInformation()
 
-  const isAdmin = userMetaData?.is_admin === true
+  if (to.name === 'home' && isLoggedIn) {
+    return isDriver ? { name: 'RiderDashboard' } : { name: 'PassengerDashboard' }
+  }
 
-  //redirect to  appropriate page if accessing the home route
-  // if (to.name === 'home') {
-  //   return isLoggedIn ? { name: 'PassengerDashboard' } : { name: 'home' }
-  // } else if (to.name === 'home') {
-  //   return isLoggedIn ? { name: 'RiderDashboard' } : { name: 'home' }
-  // }
-
-  //check if the user is logged in
-  // if (isLoggedIn && to.name === 'home') {
-  //   return [{ name: 'PassengerDashboard' }, { name: 'RiderDashboard' }]
-  // }
-
-  //check if the user is logged in and is an admin
-  // if (isLoggedIn && !isAdmin) {
-  //   //check if the user is going to forbidden pages
-  //   if (to.name.startsWith('system/users')) {
-  //     return { name: 'forbidden' }
-  //   }
-  // }
-
-  //if not logged in and going to system pages
-  // if (!isLoggedIn && to.path.startsWith('/system')) {
-  //   return { name: 'home' }
-  // }
-
-  //redirect to 404 not found if the rooute  does not exist
-  // if (router.resolve(to).matched.length === 0) {
-  //   return { name: 'not-found' }
-  // }
-
-  // Redirect from home based on role
-  if (to.name === 'home') {
-    if (!isLoggedIn) {
-      return true // Allow access to login page
-    } else if (isAdmin) {
-      return { name: 'RiderDashboard' }
-    } else {
-      return { name: 'PassengerDashboard' }
+  if (!isLoggedIn) {
+    // If route requires auth but user is not logged in
+    if (to.meta.requiresAuth) {
+      return { name: 'home' }
     }
+
+    // Let them go to public routes (like login)
+    return true
   }
 
-  // Block access to /system/* if not logged in
-  if (!isLoggedIn && to.path.startsWith('/system')) {
-    return { name: 'home' }
+  // If logged in, fetch user metadata
+  const userMetaData = await getuserInformation()
+  const isAdmin = userMetaData?.is_admin === true
+  const isDriver = userMetaData?.is_driver === true
+
+  // If going to home ("/") and already logged in, redirect based on role
+  if (to.name === 'home') {
+    return isDriver ? { name: 'RiderDashboard' } : { name: 'PassengerDashboard' }
   }
 
-  // Block non-admin users from admin pages
-  if (isLoggedIn && !isAdmin && to.name?.startsWith('system/users')) {
+  // If route requires admin but user is not admin
+  if (to.meta.requiresAdmin && !isAdmin) {
     return { name: 'forbidden' }
   }
 
-  // 404 fallback
-  if (router.resolve(to).matched.length === 0) {
-    return { name: 'not-found' }
+  // If route requires driver but user is not driver
+  if (to.meta.requiresDriver && !isDriver) {
+    return { name: 'forbidden' }
   }
 
-  return true // Always allow if no redirects are needed
+  // Everything is okay
+  return true
 })
 
 export default router

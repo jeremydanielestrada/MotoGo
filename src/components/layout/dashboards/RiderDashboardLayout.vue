@@ -1,9 +1,17 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useDisplay } from 'vuetify' // Ensure this is correctly imported
+import { isAuthenticated } from '@/utils/supabase'
+import ProfileNavigation from '../navigations/ProfileNavigation.vue'
 
 const { mobile, mdAndUp, smAndDown } = useDisplay() // Ensure mdAndUp is destructured
 const drawer = ref(true) // Set default to true
+
+const items = ref([
+  { title: 'Rider Name', text: 'Ride Was Canelled' },
+  { title: 'Notif 2' },
+  { title: 'Notif 3' },
+])
 
 // Define hideDisplay (example: set to false by default)
 const hideDisplay = ref(false)
@@ -18,6 +26,16 @@ function toggleDrawer() {
     emit('toggle-navigation', drawer.value)
   }
 }
+
+const isLoggedIn = ref(false)
+
+const getLoggedStatus = async () => {
+  isLoggedIn.value = await isAuthenticated()
+}
+
+onMounted(() => {
+  getLoggedStatus()
+})
 </script>
 
 <template>
@@ -34,10 +52,8 @@ function toggleDrawer() {
           <v-icon color="purple-darken-3">mdi-bell-outline</v-icon>
           Notifications
         </v-btn>
-        <v-btn icon>
-          <v-icon>mdi-account</v-icon>
-          Profile
-        </v-btn>
+        <!-- ProfileNavigation   Pending-->
+        <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>
       </v-bottom-navigation>
 
       <!-- App Bar -->
@@ -95,13 +111,11 @@ function toggleDrawer() {
               </v-list>
             </v-menu>
           </div>
-
-          <v-btn icon>
-            <v-icon size="30">mdi-account</v-icon>
-          </v-btn>
           <v-btn icon to="/message">
             <v-icon size="30">mdi-chat-outline</v-icon>
           </v-btn>
+          <!-- ProfileNavigation   Pending-->
+          <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>
         </v-col>
       </v-app-bar>
 

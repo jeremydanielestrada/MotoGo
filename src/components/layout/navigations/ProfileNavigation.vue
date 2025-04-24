@@ -32,10 +32,10 @@ const onLogout = async () => {
 
 //getting user information functionality
 const getuser = async () => {
-  const metadata = await getuserInformation()
+  const userMetaData = await getuserInformation()
 
-  userData.value.email = metadata.email
-  userData.value.fullname = metadata.firstname + ' ' + metadata.lastname
+  userData.value.email = userMetaData.email
+  userData.value.fullname = userMetaData.firstname + ' ' + userMetaData.lastname
   userData.value.initials = getAvatarText(userData.value.fullname)
 }
 
