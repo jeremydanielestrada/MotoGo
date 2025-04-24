@@ -1,6 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useDisplay } from 'vuetify'
+import { isAuthenticated } from '@/utils/supabase'
+import ProfileNavigation from '../navigations/ProfileNavigation.vue'
 
 const { mobile } = useDisplay()
 
@@ -12,6 +14,16 @@ const items = ref([
 
 // Define hideDisplay (example: set to false by default)
 const hideDisplay = ref(false)
+
+const isLoggedIn = ref(false)
+
+const getLoggedStatus = async () => {
+  isLoggedIn.value = await isAuthenticated()
+}
+
+onMounted(() => {
+  getLoggedStatus()
+})
 </script>
 
 <template>
@@ -31,10 +43,8 @@ const hideDisplay = ref(false)
           <v-icon>mdi-chat-outline</v-icon>
           Message
         </v-btn>
-        <v-btn icon>
-          <v-icon>mdi-account</v-icon>
-          Profile
-        </v-btn>
+        <!-- ProfileNavigation   Pending-->
+        <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>
       </v-bottom-navigation>
 
       <!-- App Bar -->
@@ -52,8 +62,10 @@ const hideDisplay = ref(false)
           <h1 class="text-italic text-purple-darken-3">MotoGo</h1>
         </v-col>
 
+        <v-spacer></v-spacer>
+
         <!-- Notification Button and Menu -->
-        <div class="text-center ms-4">
+        <div class="text-center" v-if="!mobile">
           <v-menu location="end" offset-y width="300px" transition="scale-transition">
             <template v-slot:activator="{ props }">
               <v-btn color="primary" v-bind="props">
@@ -79,30 +91,33 @@ const hideDisplay = ref(false)
           </v-menu>
         </div>
 
-        <v-spacer></v-spacer>
+        <!-- mobile-notification-bell -->
+        <v-btn color="primary" v-if="mobile" to="/mobile-notifications">
+          <v-icon size="30" color="purple-darken-3">mdi-bell-outline</v-icon>
+        </v-btn>
 
         <v-col
-          cols="3"
-          md="2"
+          cols="12"
+          md="4"
           sm="3"
           xs="4"
-          class="d-flex justify-center align-center ga-1 mx-3"
+          class="d-flex justify-center align-center"
           v-if="mobile ? hideDisplay : !hideDisplay"
         >
-          <v-btn class="active-btn">
+          <v-btn>
             <v-icon>mdi-home</v-icon>
             Home
           </v-btn>
-          <v-btn to="/booking">
+          <v-btn to="/bookings">
             <v-icon>mdi-motorbike</v-icon>
             Booking
           </v-btn>
-          <v-btn icon>
-            <v-icon size="30">mdi-account</v-icon>
+          <v-btn to="/message">
+            <v-icon>mdi-chat-outline</v-icon>
+            Message
           </v-btn>
-          <v-btn icon to="/message">
-            <v-icon size="30">mdi-chat-outline</v-icon>
-          </v-btn>
+          <!-- ProfileNavigation   Pending-->
+          <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>
         </v-col>
       </v-app-bar>
       <v-main>
@@ -113,27 +128,3 @@ const hideDisplay = ref(false)
     </v-app>
   </v-responsive>
 </template>
-
-<style scoped>
-.text-italic {
-  font-style: italic;
-  font-weight: 600;
-}
-
-.mobile-nav {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  z-index: 10;
-}
-
-.active-btn {
-  background-color: #6a1b9a !important;
-  color: white !important;
-  border-radius: 8px;
-}
-
-.position-relative {
-  position: relative;
-}
-</style>

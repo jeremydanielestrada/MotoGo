@@ -1,15 +1,35 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { LMap, LTileLayer, LMarker, LPopup, LIcon, LPolyline } from '@vue-leaflet/vue-leaflet'
+
+// Vue location setup
+import { useGeolocation } from '@vueuse/core'
+
 import L from 'leaflet'
 import DashboardLayout from '@/components/layout/dashboards/DashboardLayout.vue'
+
+// Geolocation hooks
+const {
+  coords,
+  locatedAt,
+  error: geoError,
+  resume,
+  pause,
+} = useGeolocation({
+  enableHighAccuracy: true,
+})
 
 // Fix for Leaflet marker icons
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+
+const colors = ['indigo', 'warning', 'pink darken-2']
+const slides = ['/public/images/c10.png', '/public/images/c16.png']
+import { useDisplay } from 'vuetify'
+const { mobile } = useDisplay()
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -26,16 +46,52 @@ const loading = ref(false)
 const bookingComplete = ref(false)
 const bookingReference = ref('')
 
+// Route data
+const routeLoading = ref(false)
+const routeError = ref(null)
+const routePoints = ref([]) // This will hold the actual routing points
+const routeDistance = ref(null)
+const routeDuration = ref(null)
+
 // Icons for markers
 const pickupIcon = 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png'
 const dropoffIcon = 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png'
+const currentLocationIcon = ref(null) // Will create a custom icon for current location
 
-// API key for geocoding service (replace with your API key)
+// OpenRouteService API key - replace with your own API key
+const ORS_API_KEY = '5b3ce3597851110001cf6248c205cf9c26d84099907afd1e86c6766c'
+
+// Create custom icon for current location
+onMounted(() => {
+  currentLocationIcon.value = L.divIcon({
+    className: 'current-location-icon',
+    html: '<div class="pulse"></div>',
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  })
+})
+
+// API key for geocoding service
 const GEOCODING_API_KEY = '1cdf6200a1854ae2bdb46779f9c9d1ab'
 
 // Suggestions for pickup and dropoff
 const pickupSuggestions = ref([])
 const dropoffSuggestions = ref([])
+
+// Live tracking toggle
+const isTracking = ref(false)
+
+// Start tracking user location
+const startTracking = () => {
+  isTracking.value = true
+  resume()
+}
+
+// Stop tracking user location
+const stopTracking = () => {
+  isTracking.value = false
+  pause()
+}
 
 // Fetch location suggestions
 const fetchSuggestions = async (query, type) => {
@@ -73,11 +129,20 @@ const selectSuggestion = (suggestion, type) => {
     pickup.value = { lat: suggestion.lat, lng: suggestion.lng }
     bookingForm.value.pickupAddress = suggestion.name
     pickupSuggestions.value = []
+
+    // If dropoff is already set, calculate route
+    if (dropoff.value.lat) {
+      calculateRoute()
+    }
   } else {
     dropoff.value = { lat: suggestion.lat, lng: suggestion.lng }
     bookingForm.value.dropoffAddress = suggestion.name
     dropoffSuggestions.value = []
-    calculateDistanceAndPrice()
+
+    // If pickup is already set, calculate route
+    if (pickup.value.lat) {
+      calculateRoute()
+    }
   }
 }
 
@@ -85,15 +150,12 @@ const selectSuggestion = (suggestion, type) => {
 const pickup = ref({ lat: null, lng: null })
 const dropoff = ref({ lat: null, lng: null })
 
-// Route points for drawing the line between pickup and dropoff
-const routePoints = computed(() => {
-  if (pickup.value.lat && dropoff.value.lat) {
-    return [
-      [pickup.value.lat, pickup.value.lng],
-      [dropoff.value.lat, dropoff.value.lng],
-    ]
+// Computed property for user's current location
+const userLocation = computed(() => {
+  if (coords.value.latitude && coords.value.longitude) {
+    return [coords.value.latitude, coords.value.longitude]
   }
-  return []
+  return null
 })
 
 // Booking form
@@ -117,29 +179,88 @@ const handleMapClick = (event) => {
   // If pickup is not set, set pickup
   if (!pickup.value.lat) {
     pickup.value = { lat, lng }
-    bookingForm.value.pickupAddress = `Pickup at ${lat.toFixed(6)}, ${lng.toFixed(6)}`
-    // In a real app, you would use reverse geocoding to get the address
+    reverseGeocode(lat, lng).then((address) => {
+      bookingForm.value.pickupAddress = address
+    })
   }
   // If pickup is set but dropoff is not, set dropoff
   else if (!dropoff.value.lat) {
     dropoff.value = { lat, lng }
-    bookingForm.value.dropoffAddress = `Dropoff at ${lat.toFixed(6)}, ${lng.toFixed(6)}`
-    // Calculate distance and price
-    calculateDistanceAndPrice()
+    reverseGeocode(lat, lng).then((address) => {
+      bookingForm.value.dropoffAddress = address
+      calculateRoute()
+    })
   }
   // If both are set, reset and set pickup
   else {
     pickup.value = { lat, lng }
     dropoff.value = { lat: null, lng: null }
-    bookingForm.value.pickupAddress = `Pickup at ${lat.toFixed(6)}, ${lng.toFixed(6)}`
+    reverseGeocode(lat, lng).then((address) => {
+      bookingForm.value.pickupAddress = address
+    })
     bookingForm.value.dropoffAddress = ''
     bookingForm.value.distance = ''
     bookingForm.value.price = ''
+    routePoints.value = []
+    routeDistance.value = null
+    routeDuration.value = null
   }
 }
 
-// Calculate distance and price based on the two points
-const calculateDistanceAndPrice = () => {
+// Get directions from OpenRouteService
+const calculateRoute = async () => {
+  if (!pickup.value.lat || !dropoff.value.lat) return
+
+  routeLoading.value = true
+  routeError.value = null
+
+  try {
+    // Request directions from OpenRouteService
+    const response = await axios.post(
+      `https://api.openrouteservice.org/v2/directions/driving-car/geojson`,
+      {
+        coordinates: [
+          [pickup.value.lng, pickup.value.lat], // Note: ORS uses [longitude, latitude] order
+          [dropoff.value.lng, dropoff.value.lat],
+        ],
+      },
+      {
+        headers: {
+          Authorization: ORS_API_KEY,
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    // Extract the route points
+    const coordinates = response.data.features[0].geometry.coordinates
+
+    // Convert [lng, lat] to [lat, lng] format for Leaflet
+    routePoints.value = coordinates.map((point) => [point[1], point[0]])
+
+    // Extract route information
+    const summary = response.data.features[0].properties.summary
+    routeDistance.value = (summary.distance / 1000).toFixed(2) // Convert to km
+    routeDuration.value = Math.round(summary.duration / 60) // Convert to minutes
+
+    // Update booking form
+    bookingForm.value.distance = routeDistance.value
+    // Calculate price - ₱100 base + ₱75 per km
+    const price = 100 + parseFloat(routeDistance.value) * 75
+    bookingForm.value.price = price.toFixed(2)
+  } catch (error) {
+    console.error('Error calculating route:', error)
+    routeError.value = 'Unable to calculate route. Please try different locations.'
+
+    // Fallback to direct distance calculation
+    calculateDirectDistance()
+  } finally {
+    routeLoading.value = false
+  }
+}
+
+// Fallback to direct distance if routing fails
+const calculateDirectDistance = () => {
   if (pickup.value.lat && dropoff.value.lat) {
     const distance = calculateHaversineDistance(
       pickup.value.lat,
@@ -228,6 +349,9 @@ const resetForm = () => {
     price: '',
     notes: '',
   }
+  routePoints.value = []
+  routeDistance.value = null
+  routeDuration.value = null
 }
 
 // Navigate to booking history
@@ -236,46 +360,59 @@ const viewBookingHistory = () => {
   router.push('/history')
 }
 
-// Get user's current location when component mounts
-onMounted(() => {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords
-        center.value = [latitude, longitude]
-      },
-      (error) => {
-        console.error('Error getting location:', error)
-      },
-    )
+// Watch for changes in user location and update center if tracking is enabled
+watch(coords, () => {
+  if (isTracking.value && coords.value.latitude && coords.value.longitude) {
+    center.value = [coords.value.latitude, coords.value.longitude]
+
+    // If map ref is available, update the view
+    if (map.value?.leafletObject) {
+      map.value.leafletObject.setView(center.value, zoom.value)
+    }
   }
 })
 
-// Set pickup location to user's current location
-const setPickupToCurrentLocation = () => {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords
-        pickup.value = { lat: latitude, lng: longitude }
-        const placeName = await reverseGeocode(latitude, longitude)
-        bookingForm.value.pickupAddress = placeName
-        pickupSuggestions.value = []
-      },
-      (error) => {
-        console.error('Error getting current location:', error)
-        alert('Unable to fetch your current location. Please try again.')
-      },
-    )
+// Set pickup location to user's current location using VueUse's geolocation
+const setPickupToCurrentLocation = async () => {
+  if (coords.value.latitude && coords.value.longitude) {
+    pickup.value = { lat: coords.value.latitude, lng: coords.value.longitude }
+    center.value = [coords.value.latitude, coords.value.longitude]
+
+    const placeName = await reverseGeocode(coords.value.latitude, coords.value.longitude)
+    bookingForm.value.pickupAddress = placeName
+    pickupSuggestions.value = []
+
+    // If dropoff is set, calculate route
+    if (dropoff.value.lat) {
+      calculateRoute()
+    }
   } else {
-    alert('Geolocation is not supported by your browser.')
+    // Start geolocation if not already active
+    resume()
+    alert('Getting your location... Please try again in a moment.')
   }
 }
 
-const colors = ['indigo', 'warning', 'pink darken-2']
-const slides = ['/public/images/c10.png', '/public/images/c16.png']
-import { useDisplay } from 'vuetify'
-const { mobile } = useDisplay()
+// Function to center map on user's current location
+const centerOnUserLocation = () => {
+  if (coords.value.latitude && coords.value.longitude) {
+    center.value = [coords.value.latitude, coords.value.longitude]
+  } else {
+    resume()
+    alert('Getting your location... Please try again in a moment.')
+  }
+}
+
+// Initialize geolocation on component mount
+onMounted(() => {
+  // Start tracking on mount
+  resume()
+
+  // When coordinates are available, set the map center
+  if (coords.value.latitude && coords.value.longitude) {
+    center.value = [coords.value.latitude, coords.value.longitude]
+  }
+})
 </script>
 
 <template>
@@ -309,7 +446,27 @@ const { mobile } = useDisplay()
         <v-col cols="12" md="8">
           <v-card class="mb-4">
             <v-card-title>Select Pickup and Drop-off Locations</v-card-title>
+            <v-card-subtitle v-if="geoError" class="text-error">
+              Geolocation error: {{ geoError }}
+            </v-card-subtitle>
+            <v-card-subtitle v-if="routeError" class="text-error">
+              {{ routeError }}
+            </v-card-subtitle>
             <v-card-text>
+              <div class="d-flex mb-2">
+                <v-btn color="primary" class="mr-2" @click="centerOnUserLocation">
+                  <v-icon left>mdi-crosshairs-gps</v-icon>
+                  Find Me
+                </v-btn>
+                <v-btn
+                  :color="isTracking ? 'error' : 'success'"
+                  @click="isTracking ? stopTracking() : startTracking()"
+                >
+                  <v-icon left>{{ isTracking ? 'mdi-stop' : 'mdi-play' }}</v-icon>
+                  {{ isTracking ? 'Stop Tracking' : 'Start Tracking' }}
+                </v-btn>
+              </div>
+
               <div style="height: 500px; width: 100%">
                 <l-map ref="map" v-model:zoom="zoom" :center="center" @click="handleMapClick">
                   <l-tile-layer
@@ -317,6 +474,11 @@ const { mobile } = useDisplay()
                     layer-type="base"
                     name="OpenStreetMap"
                   ></l-tile-layer>
+
+                  <!-- Current Location Marker -->
+                  <l-marker v-if="userLocation" :lat-lng="userLocation" :icon="currentLocationIcon">
+                    <l-popup>Your Current Location</l-popup>
+                  </l-marker>
 
                   <!-- Pickup Marker -->
                   <l-marker v-if="pickup.lat" :lat-lng="[pickup.lat, pickup.lng]">
@@ -338,14 +500,21 @@ const { mobile } = useDisplay()
                     ></l-icon>
                   </l-marker>
 
-                  <!-- Route line if both points are set -->
+                  <!-- Route line following roads -->
                   <l-polyline
-                    v-if="pickup.lat && dropoff.lat"
+                    v-if="routePoints.length > 0"
                     :lat-lngs="routePoints"
                     color="blue"
+                    :weight="5"
+                    :opacity="0.7"
                   ></l-polyline>
                 </l-map>
               </div>
+
+              <v-overlay absolute :value="routeLoading" class="text-center">
+                <v-progress-circular indeterminate size="64"></v-progress-circular>
+                <div class="mt-4">Calculating route...</div>
+              </v-overlay>
             </v-card-text>
           </v-card>
         </v-col>
@@ -374,7 +543,14 @@ const { mobile } = useDisplay()
                 </v-list>
 
                 <!-- Button to set current location as pickup -->
-                <v-btn color="primary" class="mb-4" block @click="setPickupToCurrentLocation">
+                <v-btn
+                  color="primary"
+                  class="mb-4"
+                  block
+                  @click="setPickupToCurrentLocation"
+                  :disabled="!coords.latitude"
+                >
+                  <v-icon left>mdi-crosshairs-gps</v-icon>
                   Use Current Location
                 </v-btn>
 
@@ -414,6 +590,10 @@ const { mobile } = useDisplay()
                   class="mb-2"
                 ></v-text-field>
 
+                <div v-if="routeDuration" class="mb-2 text-subtitle-1">
+                  Estimated travel time: {{ routeDuration }} minutes
+                </div>
+
                 <v-textarea
                   v-model="bookingForm.notes"
                   label="Additional Notes"
@@ -446,16 +626,44 @@ const { mobile } = useDisplay()
           </v-card-actions>
         </v-card>
       </v-dialog>
-
-      <v-row>
-        <v-col cols="12" md="8">
-          <v-card> </v-card>
-        </v-col>
-      </v-row>
     </template>
   </DashboardLayout>
 </template>
 
 <style scoped>
-/* Import leaflet CSS in your main.js file */
+/* Create a pulsing effect for current location marker */
+.current-location-icon {
+  position: relative;
+}
+
+.pulse {
+  width: 16px;
+  height: 16px;
+  background-color: #2196f3;
+  border-radius: 50%;
+  position: relative;
+}
+
+.pulse:before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  border: 2px solid #2196f3;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
 </style>
