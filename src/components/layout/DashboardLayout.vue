@@ -48,8 +48,8 @@ const hideDisplay = ref(false)
         <v-spacer></v-spacer>
         <v-col
           cols="3"
-          md="2"
-          sm="3"
+          md="3"
+          sm="3 "
           xs="4"
           class="d-flex justify-center align-center ga-1 mx-3"
           v-if="mobile ? hideDisplay : !hideDisplay"

@@ -12,11 +12,11 @@ const imageItems = [
 ]
 const colors = ['indigo', 'warning', 'pink darken-2']
 const slides = ['/public/images/c10.png', '/public/images/c16.png']
-const value = ref(1)
+// const value = ref(1)
 const model = ref(null) // Define the model variable for v-model binding
 const showVouchers = ref(false) // Control the rendering of the vouchers section
 
-const hideDisplay = ref(false)
+// const hideDisplay = ref(false)
 onMounted(() => {
   // Delay rendering to trigger the transition
   setTimeout(() => {
