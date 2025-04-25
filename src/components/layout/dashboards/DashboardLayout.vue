@@ -1,16 +1,20 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, onUnmounted } from 'vue'
 import { useDisplay } from 'vuetify'
 import { isAuthenticated } from '@/utils/supabase'
 import ProfileNavigation from '../navigations/ProfileNavigation.vue'
+import { useBookingStore } from '@/stores/bookings'
 
 const { mobile } = useDisplay()
 
-const items = ref([
-  { title: 'Rider Name', text: 'Ride Was Canelled' },
-  { title: 'Notif 2' },
-  { title: 'Notif 3' },
-])
+const bookingStore = useBookingStore()
+
+onMounted(() => {
+  bookingStore.subscribeToBookingUpdates()
+})
+onUnmounted(() => {
+  bookingStore.unsubscribeFromBookingUpdates()
+})
 
 // Define hideDisplay (example: set to false by default)
 const hideDisplay = ref(false)
@@ -77,15 +81,11 @@ onMounted(() => {
               <h3 class="text-h6 text-center">Notifications</h3>
 
               <v-list-item
-                v-for="(item, index) in items"
-                :key="index"
-                :value="index"
+                v-for="notif in bookingStore.bookingNotifications"
+                :key="notif.id"
                 class="border-thin"
               >
-                <v-list-item-title
-                  ><b>{{ item.title }}</b></v-list-item-title
-                >
-                <span> {{ item.text }}</span>
+                <span> {{ notif.message }} ({{ notif.timestamp }})</span>
               </v-list-item>
             </v-list>
           </v-menu>

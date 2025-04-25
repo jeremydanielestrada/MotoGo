@@ -9,8 +9,50 @@ const { coords } = useGeolocation()
 export const useBookingStore = defineStore('bookings', () => {
   const locationsfromApi = ref([])
   const getBookings = ref([])
-
   const authUser = useAuthUserStore()
+  const bookingNotifications = ref([])
+  let bookingChannel = null
+
+  //notifacations  methods
+
+  function subscribeToBookingUpdates() {
+    if (bookingChannel) return
+
+    const userId = authUser.userData?.id
+    if (!userId) return
+
+    bookingChannel = supabase
+      .channel('booking-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'bookings',
+          filter: `passenger_id=eq.${userId}`,
+        },
+        (payload) => {
+          const updatedBooking = payload.new
+          const status = updatedBooking.status
+
+          if (status === 'accepted' || status === 'rejected') {
+            bookingNotifications.value.unshift({
+              id: updatedBooking.id,
+              message: `Your booking was ${status}`,
+              timestamp: new Date().toLocaleString(),
+            })
+          }
+        },
+      )
+      .subscribe()
+  }
+
+  function unsubscribeFromBookingUpdates() {
+    if (bookingChannel) {
+      supabase.removeChannel(bookingChannel)
+      bookingChannel = null
+    }
+  }
 
   // Actions
 
@@ -72,5 +114,13 @@ export const useBookingStore = defineStore('bookings', () => {
     }
   }
 
-  return { locationsfromApi, getBookings, getBooks, getLocation }
+  return {
+    locationsfromApi,
+    getBookings,
+    getBooks,
+    getLocation,
+    bookingNotifications,
+    subscribeToBookingUpdates,
+    unsubscribeFromBookingUpdates,
+  }
 })

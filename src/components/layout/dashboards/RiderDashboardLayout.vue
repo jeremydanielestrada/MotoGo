@@ -48,10 +48,10 @@ onMounted(() => {
           Message
         </v-btn>
         <!-- Notification Button and Menu -->
-        <v-btn icon>
+        <!-- <v-btn icon>
           <v-icon color="purple-darken-3">mdi-bell-outline</v-icon>
           Notifications
-        </v-btn>
+        </v-btn> -->
         <!-- ProfileNavigation   Pending-->
         <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>
       </v-bottom-navigation>

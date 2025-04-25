@@ -8,6 +8,7 @@ import ForbiddenView from '@/views/errors/ForbiddenView.vue'
 import PassengerDashboardView from '@/views/dashboard/PassengerDashboardView.vue'
 import RiderDashboardView from '@/views/dashboard/RiderDashboardView.vue'
 import BookingsView from '@/views/BookingsView.vue'
+import HistoryView from '@/views/HistoryView.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -41,6 +42,13 @@ const router = createRouter({
       name: 'RiderDashboard',
       component: RiderDashboardView,
       meta: { requiresAuth: true, requiresDriver: true },
+    },
+
+    {
+      path: '/history',
+      name: 'History',
+      component: HistoryView,
+      meta: { requiresAuth: true },
     },
 
     {

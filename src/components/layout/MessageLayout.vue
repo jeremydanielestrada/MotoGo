@@ -23,7 +23,6 @@ async function checkUserRole() {
   }
 
   if (data && data.user) {
-    console.log('User data from Supabase:', data.user)
     // Store the role in a local ref
     userRole.value = data.user.user_metadata?.is_driver === true ? 'driver' : 'passenger'
     return data.user

@@ -185,6 +185,10 @@ onMounted(() => {
               <p v-else>No ongoing ride</p>
             </v-card-text>
           </v-card>
+          <div class="d-flex justify-center align-center">
+            <h3 text-h6>Ratings:</h3>
+            <v-rating :length="5" :size="50" :model-value="3" active-color="purple-darken-3" />
+          </div>
         </v-col>
       </v-row>
     </template>
