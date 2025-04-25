@@ -34,10 +34,19 @@ export function useLogin() {
       formAction.value.formErrorMessage = error.message
       formAction.value.formStatus = error.status
     } else if (data) {
+      // Fetch user role (assuming it's stored in user metadata)
+      const { user } = data
+      const isDriver = user?.user_metadata?.is_driver === true
+
+      // Redirect based on role
+      if (isDriver) {
+        router.replace('/system/rider-dashboard') // Redirect to riders dashboard for drivers
+      } else {
+        router.replace('/system/passenger-dashboard') // Redirect to passenger dashboard for others
+      }
+
       // Add Success Message
       formAction.value.formSuccessMessage = 'Successfully Logged Account.'
-      // Redirect Acct to Dashboard
-      router.replace('/system/passenger-dashboard')
     }
 
     // Reset Form

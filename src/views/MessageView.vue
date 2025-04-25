@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useMessagStore } from '@/stores/messages'
-import { useAuthUserStore } from '@/stores/authUser'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useMessageStore } from '@/stores/messages'
+import { supabase } from '@/utils/supabase'
 import MessageLayout from '@/components/layout/MessageLayout.vue'
 import avatarImage from '/images/ava.png'
 import { useDisplay } from 'vuetify'
@@ -9,31 +9,64 @@ import { useDisplay } from 'vuetify'
 const { mobile } = useDisplay()
 const message = ref('')
 const drawer = ref(false)
-const messageStore = useMessagStore()
-const authUserStore = useAuthUserStore()
+const messageStore = useMessageStore()
 const selectedContact = ref(null)
+const isLoading = ref(false)
+const currentUser = ref(null)
 
 // Use computed property to get messages from the store
 const messages = computed(() => messageStore.messages || [])
 
-// Fetch messages on component mount
-onMounted(async () => {
+// Get the current user directly from Supabase
+async function getCurrentUser() {
+  const { data, error } = await supabase.auth.getUser()
+
+  if (error) {
+    console.error('Error getting user:', error.message)
+    return null
+  }
+
+  if (data && data.user) {
+    currentUser.value = data.user
+    return data.user
+  }
+
+  return null
+}
+
+// Fetch messages with the user ID
+async function fetchMessages() {
+  if (!currentUser.value?.id) {
+    console.log('No user ID available for fetching messages')
+    return
+  }
+
+  isLoading.value = true
   try {
-    if (authUserStore.userData?.id) {
-      await messageStore.fetchMessages()
-    } else {
-      console.error('User not logged in')
-    }
+    await messageStore.fetchMessages(currentUser.value.id)
   } catch (error) {
     console.error('Error fetching messages:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Initial setup
+onMounted(async () => {
+  const user = await getCurrentUser()
+  if (user?.id) {
+    await fetchMessages()
+  } else {
+    console.log('User not authenticated')
   }
 })
 
 // Send a message using the store
 async function sendMessage() {
-  if (message.value.trim() !== '' && selectedContact.value) {
+  if (message.value.trim() !== '' && selectedContact.value && currentUser.value?.id) {
     try {
       await messageStore.sendMessage({
+        sender_id: currentUser.value.id,
         passenger_id: selectedContact.value.passenger_id,
         content: message.value,
       })
@@ -42,7 +75,7 @@ async function sendMessage() {
       console.error('Error sending message:', error)
     }
   } else {
-    console.warn('Cannot send message: No contact selected or message is empty')
+    console.warn('Cannot send message: No contact selected, no user ID, or message is empty')
   }
 }
 
@@ -121,11 +154,31 @@ function toggleDrawer() {
 
           <v-divider></v-divider>
 
-          <h1 class="text-center" v-if="!message">No messages yet</h1>
+          <!-- Loading state -->
+          <v-container v-if="isLoading" class="text-center my-4">
+            <v-progress-circular indeterminate color="primary"></v-progress-circular>
+            <p class="mt-2">Loading messages...</p>
+          </v-container>
+
+          <!-- No authentication state -->
+          <v-container v-else-if="!currentUser?.id" class="text-center my-4">
+            <v-alert type="info" variant="tonal"> Please log in to view your messages </v-alert>
+          </v-container>
+
+          <!-- No selected contact state -->
+          <v-container v-else-if="!selectedContact" class="text-center my-4">
+            <h3>Select a conversation to start messaging</h3>
+          </v-container>
+
+          <!-- No messages state -->
+          <v-container v-else-if="!selectedContact.messages?.length" class="text-center my-4">
+            <h3>No messages yet</h3>
+            <p class="text-subtitle-1">Start the conversation by sending a message</p>
+          </v-container>
 
           <!-- MESSAGE DISPLAY AREA -->
           <div
-            v-if="selectedContact"
+            v-else
             class="flex-grow-1 px-4 py-3 message-container"
             style="background-color: #f5f5f5; margin: 0; padding: 16px; overflow-y: auto"
           >
@@ -146,7 +199,7 @@ function toggleDrawer() {
 
           <!-- INPUT FIELD -->
           <v-sheet
-            v-if="selectedContact"
+            v-if="selectedContact && currentUser?.id"
             class="d-flex align-center px-4 py-3 mb-0"
             elevation="2"
             style="background-color: white; margin: 0; padding: 8px 16px"

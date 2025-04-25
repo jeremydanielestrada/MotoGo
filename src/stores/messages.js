@@ -1,62 +1,109 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { supabase } from '@/utils/supabase'
-import { useAuthUserStore } from './authUser'
 
-export const useMessagStore = defineStore('message', () => {
-  const authUser = useAuthUserStore()
+export const useMessageStore = defineStore('messages', () => {
+  // State
   const messages = ref([])
+  const isLoading = ref(false)
+  const error = ref(null)
 
-  // ✅ Send a message
-  async function sendMessage({ passenger_id, content }) {
-    const rider_id = authUser.userData?.id
+  // Get all messages for the current user
+  async function fetchMessages() {
+    isLoading.value = true
+    error.value = null
 
-    if (!rider_id || !passenger_id || !content) {
-      console.error('Missing fields to send message')
-      return
-    }
+    try {
+      // First, get the current user directly from Supabase
+      const { data: userData, error: userError } = await supabase.auth.getUser()
 
-    const { data, error } = await supabase.from('messages').insert([
-      {
-        rider_id,
-        passenger_id,
-        content,
-      },
-    ])
+      if (userError) {
+        console.error('Error getting user data:', userError.message)
+        error.value = 'Authentication error'
+        return
+      }
 
-    if (error) {
-      console.error('Error sending message:', error)
-    } else {
-      console.log('Message sent:', data)
-      await fetchMessages() // Refresh messages
+      if (!userData || !userData.user || !userData.user.id) {
+        console.error('User not logged in')
+        error.value = 'User not logged in'
+        return
+      }
+
+      const userId = userData.user.id
+
+      // Now fetch messages using the user ID
+      const { data, error: msgError } = await supabase
+        .from('messages') // Replace with your actual table name
+        .select('*')
+        .or(`rider_id.eq.${userId},passenger_id.eq.${userId}`) // Updated column names
+        .order('created_at', { ascending: false })
+
+      if (msgError) {
+        console.error('Error fetching messages:', msgError.message)
+        error.value = 'Failed to fetch messages'
+        return
+      }
+
+      // Process and group messages as needed
+      // This is a simplified example - adjust according to your data structure
+      messages.value = data || []
+    } catch (err) {
+      console.error('Unexpected error in fetchMessages:', err)
+      error.value = 'Unexpected error occurred'
+    } finally {
+      isLoading.value = false
     }
   }
 
-  // ✅ Fetch messages for current user
-  async function fetchMessages() {
-    const user_id = authUser.userData?.id
-
-    if (!user_id) {
-      console.error('User not logged in')
-      return
+  // Send a new message
+  async function sendMessage({ passenger_id, content }) {
+    if (!content || !passenger_id) {
+      console.error('Missing message content or recipient')
+      return { error: 'Missing message content or recipient' }
     }
 
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .or(`rider_id.eq.${user_id},passenger_id.eq.${user_id}`)
-      .order('created_at', { ascending: false })
+    try {
+      // Get current user
+      const { data: userData, error: userError } = await supabase.auth.getUser()
 
-    if (error) {
-      console.error('Error fetching messages:', error)
-    } else {
-      messages.value = data
+      if (userError || !userData?.user?.id) {
+        console.error('User not logged in')
+        return { error: 'User not logged in' }
+      }
+
+      const sender_id = userData.user.id
+
+      // Insert the message
+      const { data, error: msgError } = await supabase
+        .from('messages') // Replace with your actual table name
+        .insert({
+          rider_id: sender_id, // Updated column name
+          passenger_id,
+          content,
+          created_at: new Date().toISOString(),
+        })
+        .select()
+
+      if (msgError) {
+        console.error('Error sending message:', msgError.message)
+        return { error: msgError.message }
+      }
+
+      // Optionally refresh messages after sending
+      await fetchMessages()
+
+      return { data }
+    } catch (err) {
+      console.error('Unexpected error in sendMessage:', err)
+      return { error: 'Unexpected error occurred' }
     }
   }
 
   return {
     messages,
-    sendMessage,
+    isLoading,
+    error,
     fetchMessages,
+    sendMessage,
   }
 })

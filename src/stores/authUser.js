@@ -6,12 +6,13 @@ export const useAuthUserStore = defineStore('authUser', () => {
   // States
   const userData = ref(null)
 
-  // Getters
-  // Computed Properties; Use for getting the state but not modifying its reactive state
+  // Getters - Add a getter for user_metadata to match your component's expectations
+  const user_metadata = ref(null)
 
   // Reset State Action
   function $reset() {
     userData.value = null
+    user_metadata.value = null
   }
 
   // Actions
@@ -25,8 +26,9 @@ export const useAuthUserStore = defineStore('authUser', () => {
     }
 
     if (data.session) {
-      const { id, email, user_metadata } = data.session.user
-      userData.value = { id, email, ...user_metadata }
+      const { id, email, user_metadata: metadata } = data.session.user
+      userData.value = { id, email, ...metadata }
+      user_metadata.value = metadata // Store the original user_metadata
     }
 
     console.log('isAuthenticated:', !!data.session) // Debugging log
@@ -38,12 +40,13 @@ export const useAuthUserStore = defineStore('authUser', () => {
     const {
       data: {
         // Retrieve Id, Email and Metadata thru Destructuring
-        user: { id, email, user_metadata },
+        user: { id, email, user_metadata: metadata },
       },
     } = await supabase.auth.getUser()
 
     // Set the retrieved information to state
-    userData.value = { id, email, ...user_metadata }
+    userData.value = { id, email, ...metadata }
+    user_metadata.value = metadata // Store the original user_metadata
   }
 
   // Update User Information
@@ -51,7 +54,7 @@ export const useAuthUserStore = defineStore('authUser', () => {
     const {
       data: {
         // Retrieve Id, Email and Metadata thru Destructuring
-        user: { id, email, user_metadata },
+        user: { id, email, user_metadata: metadata },
       },
       error,
     } = await supabase.auth.updateUser({
@@ -65,8 +68,9 @@ export const useAuthUserStore = defineStore('authUser', () => {
       return { error }
     }
     // If no error set updatedData to userData state
-    else if (user_metadata) {
-      userData.value = { id, email, ...user_metadata }
+    else if (metadata) {
+      userData.value = { id, email, ...metadata }
+      user_metadata.value = metadata // Store the original user_metadata
 
       return { data: userData.value }
     }
@@ -74,9 +78,6 @@ export const useAuthUserStore = defineStore('authUser', () => {
 
   // Update User Profile Image
   async function updateUserImage(file) {
-    // Get the file extension from the uploaded file
-    // const fileExtension = file.name.split('.').pop()
-
     // Upload the file with the user ID and file extension
     const { data, error } = await supabase.storage
       .from('shirlix') /// have to change
@@ -101,6 +102,7 @@ export const useAuthUserStore = defineStore('authUser', () => {
 
   return {
     userData,
+    user_metadata, // Expose user_metadata as a top-level property
     $reset,
     isAuthenticated,
     getUserInformation,

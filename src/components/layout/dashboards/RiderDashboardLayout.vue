@@ -44,7 +44,7 @@ onMounted(() => {
       <!-- Bottom Navigation for Mobile -->
       <v-bottom-navigation v-if="mobile" grow class="mobile-nav">
         <v-btn icon to="/message">
-          <v-icon>mdi-chat-outline</v-icon>
+          <v-icon color="purple-darken-3">mdi-chat-outline</v-icon>
           Message
         </v-btn>
         <!-- Notification Button and Menu -->
@@ -112,7 +112,7 @@ onMounted(() => {
             </v-menu>
           </div>
           <v-btn icon to="/message">
-            <v-icon size="30">mdi-chat-outline</v-icon>
+            <v-icon size="30" color="purple-darken-3">mdi-chat-outline</v-icon>
           </v-btn>
           <!-- ProfileNavigation   Pending-->
           <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>

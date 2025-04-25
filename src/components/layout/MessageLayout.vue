@@ -1,16 +1,48 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useDisplay } from 'vuetify'
+import { supabase } from '@/utils/supabase'
+import { useAuthUserStore } from '@/stores/authUser'
 
 const { mdAndUp, smAndDown } = useDisplay()
 const drawer = ref(false)
+const userRole = ref(null)
+const authUserStore = useAuthUserStore()
 
 function toggleDrawer() {
   drawer.value = !drawer.value
 }
 
-onMounted(() => {
+// Check if user is a driver directly from Supabase
+async function checkUserRole() {
+  const { data, error } = await supabase.auth.getUser()
+
+  if (error) {
+    console.error('Error getting user:', error.message)
+    return null
+  }
+
+  if (data && data.user) {
+    console.log('User data from Supabase:', data.user)
+    // Store the role in a local ref
+    userRole.value = data.user.user_metadata?.is_driver === true ? 'driver' : 'passenger'
+    return data.user
+  }
+
+  return null
+}
+
+// Determine dashboard path based on direct user role check
+const dashboardPath = computed(() => {
+  return userRole.value === 'driver' ? '/system/rider-dashboard' : '/system/passenger-dashboard'
+})
+
+// Combine the onMounted hooks
+onMounted(async () => {
   drawer.value = false // Always start with drawer closed
+
+  // Get user role directly from Supabase
+  await checkUserRole()
 })
 
 watch(
@@ -32,9 +64,15 @@ watch(
           >mdi-message-outline</v-icon
         >
       </template>
-      <v-btn to="/system/passenger-dashboard">
-        // not finalize
-        <v-icon class="ms-4" size="30" v-if="mdAndUp ? false : true">mdi-keyboard-backspace</v-icon>
+
+      <!-- Use the computed dashboardPath -->
+      <v-btn :to="dashboardPath" v-if="mdAndUp">
+        <v-icon> mdi-keyboard-backspace </v-icon>
+        Back to Dashboard
+      </v-btn>
+
+      <v-btn :to="dashboardPath" v-if="!mdAndUp">
+        <v-icon class="ms-4" size="30">mdi-keyboard-backspace</v-icon>
       </v-btn>
 
       <v-spacer></v-spacer>
