@@ -32,7 +32,10 @@ watch(
           >mdi-message-outline</v-icon
         >
       </template>
-      <v-icon class="ms-4" size="30" v-if="mdAndUp ? false : true">mdi-keyboard-backspace</v-icon>
+      <v-btn to="/system/passenger-dashboard">
+        // not finalize
+        <v-icon class="ms-4" size="30" v-if="mdAndUp ? false : true">mdi-keyboard-backspace</v-icon>
+      </v-btn>
 
       <v-spacer></v-spacer>
       <h1 class="text-h6 font-weight-bold me-5">Messages</h1>

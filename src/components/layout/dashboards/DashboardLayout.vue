@@ -31,7 +31,7 @@ onMounted(() => {
     <v-app>
       <!-- Bottom Navigation for Mobile -->
       <v-bottom-navigation v-if="mobile" grow class="mobile-nav">
-        <v-btn class="active-btn">
+        <v-btn class="active-btn" to="/system/passenger-dashboard">
           <v-icon>mdi-home</v-icon>
           Home
         </v-btn>
@@ -104,7 +104,7 @@ onMounted(() => {
           class="d-flex justify-center align-center"
           v-if="mobile ? hideDisplay : !hideDisplay"
         >
-          <v-btn>
+          <v-btn to="/system/passenger-dashboard">
             <v-icon>mdi-home</v-icon>
             Home
           </v-btn>
