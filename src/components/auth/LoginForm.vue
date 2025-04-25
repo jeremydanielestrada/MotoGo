@@ -1,14 +1,14 @@
 <script setup>
-import HomeView from '@/components/system/dashboard/PassengerDashboard.vue'
 import { requiredValidator, emailValidator } from '@/utils/validator'
 import { useLogin } from '@/composables/auth/login'
+import AlertNotification from '../common/AlertNotification.vue'
 import { ref } from 'vue'
 
 const LogIndialog = ref(false)
-const Registerdialog = ref(true)
 const { formData, formAction, refVForm, onFormSubmit } = useLogin()
 const isPasswordVisible = ref(false)
 </script>
+
 <template>
   <v-row class="card-border">
     <v-col cols="12">
@@ -35,7 +35,12 @@ const isPasswordVisible = ref(false)
               <v-card-text elevate="9">
                 <v-row class="d-flex justify-center">
                   <v-col cols="12" md="4" sm="6" lg="10" class="text-black">
-                    <v-form ref="refVform" fast-fail @submit.prevent="onFormSubmit">
+                    <AlertNotification
+                      :form-success-message="formAction.formSuccessMessage"
+                      :form-error-message="formAction.formErrorMessage"
+                    >
+                    </AlertNotification>
+                    <v-form ref="refVForm" fast-fail @submit.prevent="onFormSubmit">
                       <v-text-field
                         v-model="formData.email"
                         class="font-weight-bold"
