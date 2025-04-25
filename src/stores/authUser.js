@@ -1,22 +1,17 @@
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { supabase } from '@/utils/supabase'
 
 export const useAuthUserStore = defineStore('authUser', () => {
   // States
   const userData = ref(null)
-  const authPages = ref([])
 
   // Getters
   // Computed Properties; Use for getting the state but not modifying its reactive state
-  const userRole = computed(() => {
-    return userData.value?.is_admin ? 'Super Administrator' : userData.value.user_role
-  })
 
   // Reset State Action
   function $reset() {
     userData.value = null
-    authPages.value = []
   }
 
   // Actions
@@ -34,6 +29,7 @@ export const useAuthUserStore = defineStore('authUser', () => {
       userData.value = { id, email, ...user_metadata }
     }
 
+    console.log('isAuthenticated:', !!data.session) // Debugging log
     return !!data.session
   }
 
@@ -48,17 +44,6 @@ export const useAuthUserStore = defineStore('authUser', () => {
 
     // Set the retrieved information to state
     userData.value = { id, email, ...user_metadata }
-  }
-
-  // Retrieve User Roles Pages
-  async function getAuthPages(name) {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('*, pages: user_role_pages (page)')
-      .eq('user_role', name)
-
-    // Set the retrieved data to state
-    authPages.value = data[0].pages.map((p) => p.page)
   }
 
   // Update User Information
@@ -94,7 +79,7 @@ export const useAuthUserStore = defineStore('authUser', () => {
 
     // Upload the file with the user ID and file extension
     const { data, error } = await supabase.storage
-      .from('shirlix')
+      .from('shirlix') /// have to change
       .upload('avatars/' + userData.value.id + '-avatar.png', file, {
         cacheControl: '3600',
         upsert: true,
@@ -116,12 +101,9 @@ export const useAuthUserStore = defineStore('authUser', () => {
 
   return {
     userData,
-    userRole,
-    authPages,
     $reset,
     isAuthenticated,
     getUserInformation,
-    getAuthPages,
     updateUserInformation,
     updateUserImage,
   }

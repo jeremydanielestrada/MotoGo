@@ -3,23 +3,19 @@ import { defineStore } from 'pinia'
 import { supabase } from '@/utils/supabase'
 import { useAuthUserStore } from './authUser'
 import { useGeolocation } from '@vueuse/core'
+
 const { coords } = useGeolocation()
 
-// not finalize functionalities
 export const useBookingStore = defineStore('bookings', () => {
   const locationsfromApi = ref([])
   const getBookings = ref([])
 
   const authUser = useAuthUserStore()
 
-  //getters
-  // const sample = computed(() => count.value * 2)
+  // Actions
 
-  //Actions
-
-  //retriver from api and insert more to bookings table in supabase
+  // Retrieve geolocation and insert into bookings table
   async function getLocation() {
-    // Directly use the reactive `coords` object
     const currentCoords = coords.value
 
     if (!currentCoords || !currentCoords.latitude || !currentCoords.longitude) {
@@ -27,44 +23,54 @@ export const useBookingStore = defineStore('bookings', () => {
       return
     }
 
-    // Prepare a dummy API-like response using current geolocation
+    // Prepare location data
     locationsfromApi.value = [
       {
-        data: {
-          latitude: currentCoords.latitude,
-          longitude: currentCoords.longitude,
-        },
+        latitude: currentCoords.latitude,
+        longitude: currentCoords.longitude,
       },
     ]
 
     const transformedData = locationsfromApi.value.map((location) => {
       return {
-        raider_id: authUser.userData.id,
-        location: location.data,
-        rating: authUser.rating,
+        rider_id: authUser.userData.id, // Corrected field name
+        location, // Assuming location is a JSON field
+        rating: authUser.userData.rating, // Ensure rating exists in userData
       }
     })
 
-    const { data, error } = await supabase.from('bookings').insert(transformedData).select()
+    try {
+      const { data, error } = await supabase.from('bookings').insert(transformedData).select()
 
-    if (error) {
-      console.error('Error inserting into bookings:', error)
-      return
-    }
+      if (error) {
+        console.error('Error inserting booking:', error)
+        return
+      }
 
-    if (data) {
-      await getBooks()
-      console.log('Inserted booking:', data)
+      if (data) {
+        await getBooks()
+        console.log('Inserted booking:', data)
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err)
     }
   }
 
-  //retrieve from supabase
-
+  // Retrieve all bookings from Supabase
   async function getBooks() {
-    const { data } = await supabase.from('bookings').select('*')
+    try {
+      const { data, error } = await supabase.from('bookings').select('*')
 
-    getBookings.value = data
+      if (error) {
+        console.error('Error fetching bookings:', error)
+        return
+      }
+
+      getBookings.value = data
+    } catch (err) {
+      console.error('Unexpected error:', err)
+    }
   }
 
-  return { locationsfromApi, getBookings, getBooks, getLocation } /// return  the functions and state
+  return { locationsfromApi, getBookings, getBooks, getLocation }
 })

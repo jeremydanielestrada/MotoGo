@@ -1,17 +1,12 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { useDisplay } from 'vuetify' // Import useDisplay from Vuetify
+import { useDisplay } from 'vuetify'
 
 const { mdAndUp, smAndDown } = useDisplay()
 const drawer = ref(false)
 
-// Define emit for the toggle-navigation event
-const emit = defineEmits(['toggle-navigation'])
-
 function toggleDrawer() {
   drawer.value = !drawer.value
-  // Emit an event to notify the parent component
-  emit('toggle-navigation', drawer.value)
 }
 
 onMounted(() => {
@@ -41,14 +36,10 @@ watch(
 
       <v-spacer></v-spacer>
       <h1 class="text-h6 font-weight-bold me-5">Messages</h1>
-
-      <!-- <v-icon class="mx-10" v-show="mdAndUp" size="40" @click="showFormModal = true"
-        >mdi-account-circle-outline</v-icon
-      > -->
     </v-app-bar>
 
     <v-main>
-      <slot name="content" :drawer="drawer"></slot>
+      <slot name="content"></slot>
     </v-main>
   </v-app>
 </template>

@@ -3,12 +3,77 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { LMap, LTileLayer, LMarker, LPopup, LIcon, LPolyline } from '@vue-leaflet/vue-leaflet'
+import { useLocationStore } from '@/stores/locations'
+import { OpenRouteService } from '@/utils/openrouteService'
+import 'leaflet/dist/leaflet.css'
 
 // Vue location setup
 import { useGeolocation } from '@vueuse/core'
-
 import L from 'leaflet'
 import DashboardLayout from '@/components/layout/dashboards/DashboardLayout.vue'
+import { useAuthUserStore } from '@/stores/authUser' // Import useAuthUserStore
+
+const locationStore = useLocationStore()
+const currentPosition = useGeolocation()
+const destinationCoords = ref(null)
+
+//
+const initMap = () => {
+  if (!map.value) {
+    map.value = L.map('map').setView(
+      [currentPosition.latitude.value, currentPosition.longitude.value],
+      13,
+    )
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+    }).addTo(map.value)
+  }
+}
+
+const generateRoute = async () => {
+  if (!destinationCoords.value) return
+
+  const start = [currentPosition.longitude.value, currentPosition.latitude.value]
+  const end = [destinationCoords.value.lng, destinationCoords.value.lat]
+
+  try {
+    const response = await OpenRouteService.getRoute(start, end)
+    const routeGeoJSON = L.geoJSON(response.routes[0].geometry, {
+      style: { color: 'blue', weight: 4 },
+    })
+
+    if (routeLayer.value) {
+      map.value.removeLayer(routeLayer.value)
+    }
+
+    routeLayer.value = routeGeoJSON.addTo(map.value)
+    map.value.fitBounds(routeGeoJSON.getBounds())
+  } catch (error) {
+    console.error('Error generating route:', error)
+  }
+}
+
+// Run this whenever the destination changes
+watch(destinationCoords, () => {
+  if (destinationCoords.value) {
+    generateRoute()
+  }
+})
+
+onMounted(async () => {
+  initMap()
+
+  // Ensure user session is loaded before checking login status
+  const authUserStore = useAuthUserStore()
+  await authUserStore.isAuthenticated()
+
+  if (locationStore.isLoggedIn) {
+    locationStore.fetchLocations()
+  } else {
+    console.warn('User not logged in. Skipping fetchLocations.')
+  }
+})
 
 // Geolocation hooks
 const {
@@ -40,7 +105,7 @@ L.Icon.Default.mergeOptions({
 
 const router = useRouter()
 const map = ref(null)
-const zoom = ref(13)
+const zoom = ref(11)
 const center = ref([12.8797, 121.774]) // Default center (Philippines)
 const loading = ref(false)
 const bookingComplete = ref(false)
@@ -52,6 +117,7 @@ const routeError = ref(null)
 const routePoints = ref([]) // This will hold the actual routing points
 const routeDistance = ref(null)
 const routeDuration = ref(null)
+const routeLayer = ref(null)
 
 // Icons for markers
 const pickupIcon = 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png'
@@ -181,6 +247,13 @@ const handleMapClick = (event) => {
     pickup.value = { lat, lng }
     reverseGeocode(lat, lng).then((address) => {
       bookingForm.value.pickupAddress = address
+      // Store the pickup location in locationStore
+      locationStore.addLocation({
+        latitude_a: lat,
+        longitude_a: lng,
+        latitude_b: null,
+        longitude_b: null,
+      })
     })
   }
   // If pickup is set but dropoff is not, set dropoff
@@ -188,6 +261,13 @@ const handleMapClick = (event) => {
     dropoff.value = { lat, lng }
     reverseGeocode(lat, lng).then((address) => {
       bookingForm.value.dropoffAddress = address
+      // Store the dropoff location in locationStore
+      locationStore.addLocation({
+        latitude_a: pickup.value.lat,
+        longitude_a: pickup.value.lng,
+        latitude_b: lat,
+        longitude_b: lng,
+      })
       calculateRoute()
     })
   }
@@ -197,6 +277,13 @@ const handleMapClick = (event) => {
     dropoff.value = { lat: null, lng: null }
     reverseGeocode(lat, lng).then((address) => {
       bookingForm.value.pickupAddress = address
+      // Store the reset pickup location in locationStore
+      locationStore.addLocation({
+        latitude_a: lat,
+        longitude_a: lng,
+        latitude_b: null,
+        longitude_b: null,
+      })
     })
     bookingForm.value.dropoffAddress = ''
     bookingForm.value.distance = ''
@@ -523,6 +610,12 @@ onMounted(() => {
           <v-card>
             <v-card-title>Booking Details</v-card-title>
             <v-card-text>
+              <!-- Loader overlay -->
+              <v-overlay absolute :value="loading" class="text-center">
+                <v-progress-circular indeterminate size="64"></v-progress-circular>
+                <div class="mt-4">Loading...</div>
+              </v-overlay>
+              <!-- Booking form -->
               <v-form @submit.prevent="submitBooking">
                 <!-- Pickup Address with Suggestions -->
                 <v-text-field
