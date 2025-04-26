@@ -76,8 +76,12 @@ const isActive = (path) => route.path === path
         <div class="text-center" v-if="!mobile">
           <v-menu location="end" offset-y width="300px" transition="scale-transition">
             <template v-slot:activator="{ props }">
-              <v-btn color="primary" v-bind="props">
-                <v-icon size="30" color="purple-darken-3">mdi-bell-outline</v-icon>
+              <v-btn v-bind="props">
+                <v-icon
+                  size="30"
+                  :color="bookingStore.subscribeToBookingUpdates() ? 'purple-lighten-4' : 'null'"
+                  >mdi-bell-outline</v-icon
+                >
               </v-btn>
             </template>
 
@@ -96,8 +100,8 @@ const isActive = (path) => route.path === path
         </div>
 
         <!-- mobile-notification-bell -->
-        <v-btn color="primary" v-if="mobile" to="/mobile-notifications">
-          <v-icon size="30" color="purple-darken-3">mdi-bell-outline</v-icon>
+        <v-btn " v-if="mobile" to="/mobile-notifications">
+          <v-icon size="30" :color="bookingStore.subscribeToBookingUpdates() ? 'purple-lighten-4' : 'null'">mdi-bell-outline</v-icon>
         </v-btn>
 
         <v-col
