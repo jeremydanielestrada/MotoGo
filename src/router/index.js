@@ -8,6 +8,7 @@ import MobileNotifacations from '@/components/common/MobileNotifacations.vue'
 import { isAuthenticated, getuserInformation } from '@/utils/supabase'
 import NotFoundView from '@/views/errors/NotFoundView.vue'
 import ForbiddenView from '@/views/errors/ForbiddenView.vue'
+import EditProfileView from '@/views/auth/EditProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -59,6 +60,11 @@ const router = createRouter({
       path: '/forbidden',
       name: 'forbidden',
       component: ForbiddenView,
+    },
+    {
+      path: '/edit-profile',
+      name: 'EditProfile',
+      component: EditProfileView,
     },
   ],
 })
