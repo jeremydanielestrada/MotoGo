@@ -59,7 +59,7 @@ export const useAuthUserStore = defineStore('authUser', () => {
       error,
     } = await supabase.auth.updateUser({
       data: {
-        ...updatedData,
+        ...updatedData, // Include ratings in the updated data
       },
     })
 
@@ -100,6 +100,24 @@ export const useAuthUserStore = defineStore('authUser', () => {
     }
   }
 
+  // Add Rating
+  async function addRating(entityId, rating) {
+    const { data, error } = await supabase
+      .from('ratings') // Replace with your actual table name
+      .insert({
+        user_id: userData.value.id,
+        entity_id: entityId,
+        rating,
+      })
+
+    if (error) {
+      console.error('Error adding rating:', error.message)
+      return { error }
+    }
+
+    return { data }
+  }
+
   return {
     userData,
     user_metadata, // Expose user_metadata as a top-level property
@@ -108,5 +126,6 @@ export const useAuthUserStore = defineStore('authUser', () => {
     getUserInformation,
     updateUserInformation,
     updateUserImage,
+    addRating,
   }
 })

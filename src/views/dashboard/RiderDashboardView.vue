@@ -14,6 +14,28 @@ const rideRequests = ref([])
 const selectedRide = ref(null)
 const routePoints = ref([])
 
+// Average rating
+const averageRating = ref(0)
+
+// Fetch the rider's average rating
+async function fetchAverageRating() {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('rating')
+    .eq('rider_id', supabase.auth.user()?.id) // Filter by rider ID
+    .not('rating', 'is', null) // Exclude bookings without ratings
+
+  if (error) {
+    console.error('Error fetching average rating:', error)
+    return
+  }
+
+  if (data.length > 0) {
+    const total = data.reduce((sum, item) => sum + item.rating, 0)
+    averageRating.value = (total / data.length).toFixed(1)
+  }
+}
+
 // Fetch ride requests in real-time
 const fetchRideRequests = () => {
   supabase
@@ -81,6 +103,7 @@ const finishRide = () => {
 // Initialize real-time listener on mount
 onMounted(() => {
   fetchRideRequests()
+  fetchAverageRating()
 })
 </script>
 
@@ -189,6 +212,12 @@ onMounted(() => {
             <h3 text-h6>Ratings:</h3>
             <v-rating :length="5" :size="50" :model-value="3" active-color="purple-darken-3" />
           </div>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12">
+          <h2 class="text-center">Your Average Rating</h2>
+          <v-rating :value="averageRating" readonly size="large" />
         </v-col>
       </v-row>
     </template>

@@ -114,6 +114,27 @@ export const useBookingStore = defineStore('bookings', () => {
     }
   }
 
+  // Add a rating for a completed booking
+  async function rateRider(bookingId, rating) {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .update({ rating }) // Update the rating column
+        .eq('id', bookingId) // Match the booking by ID
+
+      if (error) {
+        console.error('Error updating rating:', error)
+        return { error }
+      }
+
+      console.log('Rating updated successfully:', data)
+      return { data }
+    } catch (err) {
+      console.error('Unexpected error updating rating:', err)
+      return { error: 'Unexpected error occurred' }
+    }
+  }
+
   return {
     locationsfromApi,
     getBookings,
@@ -122,5 +143,6 @@ export const useBookingStore = defineStore('bookings', () => {
     bookingNotifications,
     subscribeToBookingUpdates,
     unsubscribeFromBookingUpdates,
+    rateRider,
   }
 })
