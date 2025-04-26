@@ -1,0 +1,171 @@
+<script setup>
+import { ref } from 'vue'
+
+const profilePhoto = ref('/images/ava.png')
+
+const dialog = ref(false) // for profile picture dialog
+const rating = ref(3.5)
+function onCoverChange(e) {
+  const file = e.target.files[0]
+  if (file) coverPhoto.value = URL.createObjectURL(file)
+}
+
+function onProfileChange(e) {
+  const file = e.target.files[0]
+  if (file) profilePhoto.value = URL.createObjectURL(file)
+}
+</script>
+
+<template>
+  <!-- PROFILE PAGE -->
+  <v-card class="profile-card rounded-0" flat>
+    <!-- Cover Photo -->
+    <v-card>
+      <div class="background-pic" elevation="5">
+        <v-img :src="coverPhoto" height="300px" class="bg-purple-lighten-4">
+          <input
+            type="file"
+            ref="coverInput"
+            accept="image/*"
+            class="d-none"
+            @change="onCoverChange"
+          />
+        </v-img>
+      </div>
+    </v-card>
+
+    <!-- Profile Picture -->
+    <div>
+      <v-avatar size="150" class="profile-avatar elevation-4" @click="dialog = true">
+        <v-img class="image-profile" :src="profilePhoto" />
+        <v-btn icon class="ma-1 button-cover" @click.stop="$refs.profileInput.click()">
+          <v-icon size="20">mdi-camera</v-icon>
+        </v-btn>
+        <input
+          type="file"
+          ref="profileInput"
+          accept="image/*"
+          class="d-none"
+          @click="dialog = true"
+          @change="onProfileChange"
+        />
+      </v-avatar>
+    </div>
+
+    <!-- PROFILE DIALOG -->
+    <v-dialog v-model="dialog">
+      <v-btn icon class="close-btn" @click="dialog = false">
+        <v-icon>mdi-close</v-icon>
+      </v-btn>
+
+      <div class="d-flex justify-center">
+        <img class="image-profile" :src="profilePhoto" width="30%" />
+      </div>
+    </v-dialog>
+    <br />
+    <br />
+    <br />
+
+    <!-- Rider Info -->
+
+    <div class="text-center mt-8">
+      <h2 class="text-h4 font-weight-bold">
+        Ava Tar<v-icon color="blue" size="20" class="ml-2" title="Verified User">
+          mdi-check-decagram
+        </v-icon>
+      </h2>
+      <p class="text-body-3 text-medium-emphasis">Rider</p>
+    </div>
+    <br />
+    <br />
+
+    <!-- DETAILS -->
+    <v-container>
+      <v-row class="d-flex justify-center">
+        <v-divider></v-divider>
+        <v-col cols="12" sm="6" md="4">
+          <v-card elevation="5" class="card-details">
+            <div>
+              <h2 class="ml-2">Details:</h2>
+              <v-list-item>
+                <v-list-item-content>
+                  <v-list-item-title>Plate Number: SZA123</v-list-item-title>
+                  <v-divider class="pb-2"></v-divider>
+                  <v-list-item-title>Phone Number: 09123456789</v-list-item-title>
+                  <v-divider class="pb-2"></v-divider>
+                </v-list-item-content>
+              </v-list-item>
+            </div>
+            <div class="d-flex align-center justify-center">
+              <br />
+              <h3 class="title-rating">Ratings:</h3>
+
+              <h3 class="pl-2">
+                {{ rating }}
+              </h3>
+              <v-divider class="mx-3" vertical></v-divider>
+              <v-rating
+                size="25"
+                v-model="rating"
+                active-color="purple"
+                color="purple lighten-4"
+                half-increments
+                hover
+              ></v-rating>
+            </div>
+            <v-list-item>
+              <v-list-item-content class="text-center">
+                <v-list-item-subtitle>Joined June 2025</v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+  </v-card>
+</template>
+
+<style scoped>
+.profile-card {
+  position: relative;
+}
+
+.profile-avatar {
+  position: absolute;
+  top: 250px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid #ba68c8;
+  overflow: visible;
+  cursor: pointer;
+}
+
+.d-none {
+  display: none;
+}
+
+.button-cover {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  box-shadow: none;
+  background: #ba68c8;
+}
+.close-btn {
+  background: none;
+  box-shadow: none;
+}
+
+.image-profile {
+  border-radius: 50%;
+}
+
+.background-pic {
+  /* border: 2px solid whitesmoke; */
+  border-bottom-right-radius: 30px;
+  cursor: pointer;
+}
+.card-details {
+  padding: 20px;
+}
+</style>
