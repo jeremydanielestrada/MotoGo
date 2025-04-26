@@ -106,8 +106,8 @@ L.Icon.Default.mergeOptions({
 
 const router = useRouter()
 const map = ref(null)
-const zoom = ref(11)
-const center = ref([12.8797, 121.774]) // Default center (Philippines)
+const zoom = ref(15)
+const center = ref([8.948056, 125.543056]) // Default center (Philippines)
 const loading = ref(false)
 const bookingComplete = ref(false)
 const bookingReference = ref('')
@@ -174,6 +174,7 @@ const fetchSuggestions = async (query, type) => {
         q: query,
         key: GEOCODING_API_KEY,
         limit: 5,
+        bound: '4.2158,116.7494,21.3210,126.5990',
       },
     })
 
@@ -236,12 +237,20 @@ const bookingForm = ref({
 
 // Calculate if booking can be made
 const canBook = computed(() => {
-  return pickup.value.lat && dropoff.value.lat && bookingForm.value.distance
+  return (
+    pickup.value.lat && dropoff.value.lat && bookingForm.value.distance && isWithinPhilippines.value
+  )
 })
 
 // Handle map clicks for setting locations
 const handleMapClick = (event) => {
   const { lat, lng } = event.latlng
+
+  // Check if the selected location is within the Philippines
+  if (lat < 4.2158 || lat > 21.321 || lng < 116.7494 || lng > 126.599) {
+    alert('Selected location is outside the Philippines. Please select a valid location.')
+    return
+  }
 
   // If pickup is not set, set pickup
   if (!pickup.value.lat) {
@@ -295,6 +304,12 @@ const handleMapClick = (event) => {
   }
 }
 
+/// set within  Ph
+const isWithinPhilippines = computed(() => {
+  const { lat, lng } = pickup.value
+  return lat >= 4.2158 && lat <= 21.321 && lng >= 116.7494 && lng <= 126.599
+})
+
 // Get directions from OpenRouteService
 const calculateRoute = async () => {
   if (!pickup.value.lat || !dropoff.value.lat) return
@@ -334,7 +349,7 @@ const calculateRoute = async () => {
     // Update booking form
     bookingForm.value.distance = routeDistance.value
     // Calculate price - ₱100 base + ₱75 per km
-    const price = 100 + parseFloat(routeDistance.value) * 75
+    const price = 30 + parseFloat(routeDistance.value) * 12
     bookingForm.value.price = price.toFixed(2)
   } catch (error) {
     console.error('Error calculating route:', error)
@@ -359,7 +374,7 @@ const calculateDirectDistance = () => {
 
     bookingForm.value.distance = distance.toFixed(2)
     // Simple price calculation in pesos - ₱100 base + ₱75 per km
-    const price = 100 + distance * 75
+    const price = 30 + distance * 12
     bookingForm.value.price = price.toFixed(2)
   }
 }
