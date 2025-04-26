@@ -636,6 +636,7 @@ const carouselHeight = computed(() => {
     transparent 100%
   );
   height: 60%;
+
   width: 100%;
 }
 

@@ -13,6 +13,7 @@ import L from 'leaflet'
 import DashboardLayout from '@/components/layout/dashboards/DashboardLayout.vue'
 import { useAuthUserStore } from '@/stores/authUser' // Import useAuthUserStore
 
+//location states
 const locationStore = useLocationStore()
 const currentPosition = useGeolocation()
 const destinationCoords = ref(null)

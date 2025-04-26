@@ -77,13 +77,14 @@ export const useLocationStore = defineStore('locations', () => {
       user_id: userId,
     }
 
-    const { data, error } = await supabase.from('locations').insert([payload])
+    const { data, error } = await supabase.from('locations').insert([payload]).select()
 
     if (error) {
       console.error('Error adding location:', error)
-    } else {
-      console.log('Added location:', data)
+    } else if (data) {
       getLocation.value.push(...data)
+    } else {
+      console.warn('No data returned from Supabase insert')
     }
   }
 
