@@ -210,14 +210,8 @@ onMounted(() => {
           </v-card>
           <div class="d-flex justify-center align-center">
             <h3 text-h6>Ratings:</h3>
-            <v-rating :length="5" :size="50" :model-value="3" active-color="purple-darken-3" />
+            <v-rating :Value="averageRating" readonly active-color="purple-darken-3" />
           </div>
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12">
-          <h2 class="text-center">Your Average Rating</h2>
-          <v-rating :value="averageRating" readonly size="large" />
         </v-col>
       </v-row>
     </template>
