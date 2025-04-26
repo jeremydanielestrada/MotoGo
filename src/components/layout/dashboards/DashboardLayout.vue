@@ -4,10 +4,11 @@ import { useDisplay } from 'vuetify'
 import { isAuthenticated } from '@/utils/supabase'
 import ProfileNavigation from '../navigations/ProfileNavigation.vue'
 import { useBookingStore } from '@/stores/bookings'
+import { useRoute } from 'vue-router'
 
 const { mobile } = useDisplay()
-
 const bookingStore = useBookingStore()
+const route = useRoute()
 
 onMounted(() => {
   bookingStore.subscribeToBookingUpdates()
@@ -16,9 +17,7 @@ onUnmounted(() => {
   bookingStore.unsubscribeFromBookingUpdates()
 })
 
-// Define hideDisplay (example: set to false by default)
 const hideDisplay = ref(false)
-
 const isLoggedIn = ref(false)
 
 const getLoggedStatus = async () => {
@@ -28,6 +27,9 @@ const getLoggedStatus = async () => {
 onMounted(() => {
   getLoggedStatus()
 })
+
+// Function to check if a route is active
+const isActive = (path) => route.path === path
 </script>
 
 <template>
@@ -35,19 +37,21 @@ onMounted(() => {
     <v-app>
       <!-- Bottom Navigation for Mobile -->
       <v-bottom-navigation v-if="mobile" grow class="mobile-nav">
-        <v-btn class="active-btn" to="/system/passenger-dashboard">
+        <v-btn
+          :class="{ 'active-btn': isActive('/system/passenger-dashboard') }"
+          to="/system/passenger-dashboard"
+        >
           <v-icon>mdi-home</v-icon>
           Home
         </v-btn>
-        <v-btn to="/bookings">
+        <v-btn :class="{ 'active-btn': isActive('/bookings') }" to="/bookings">
           <v-icon>mdi-motorbike</v-icon>
           Booking
         </v-btn>
-        <v-btn icon to="/message">
+        <v-btn :class="{ 'active-btn': isActive('/message') }" to="/message">
           <v-icon>mdi-chat-outline</v-icon>
           Message
         </v-btn>
-        <!-- ProfileNavigation   Pending-->
         <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>
       </v-bottom-navigation>
 
@@ -104,19 +108,21 @@ onMounted(() => {
           class="d-flex justify-center align-center"
           v-if="mobile ? hideDisplay : !hideDisplay"
         >
-          <v-btn to="/system/passenger-dashboard">
+          <v-btn
+            :class="{ 'active-btn': isActive('/system/passenger-dashboard') }"
+            to="/system/passenger-dashboard"
+          >
             <v-icon>mdi-home</v-icon>
             Home
           </v-btn>
-          <v-btn to="/bookings">
+          <v-btn :class="{ 'active-btn': isActive('/bookings') }" to="/bookings">
             <v-icon>mdi-motorbike</v-icon>
             Booking
           </v-btn>
-          <v-btn to="/message">
+          <v-btn :class="{ 'active-btn': isActive('/message') }" to="/message">
             <v-icon>mdi-chat-outline</v-icon>
             Message
           </v-btn>
-          <!-- ProfileNavigation   Pending-->
           <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>
         </v-col>
       </v-app-bar>
@@ -128,3 +134,9 @@ onMounted(() => {
     </v-app>
   </v-responsive>
 </template>
+
+<style scoped>
+.active-btn {
+  background-color: #e1bee7;
+}
+</style>

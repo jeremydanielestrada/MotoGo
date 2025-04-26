@@ -19,20 +19,32 @@ const averageRating = ref(0)
 
 // Fetch the rider's average rating
 async function fetchAverageRating() {
-  const { data, error } = await supabase
-    .from('bookings')
-    .select('rating')
-    .eq('rider_id', supabase.auth.user()?.id) // Filter by rider ID
-    .not('rating', 'is', null) // Exclude bookings without ratings
+  try {
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    if (userError || !userData?.user?.id) {
+      console.error('Error fetching user data:', userError?.message || 'User not logged in')
+      return
+    }
 
-  if (error) {
-    console.error('Error fetching average rating:', error)
-    return
-  }
+    const riderId = userData.user.id
 
-  if (data.length > 0) {
-    const total = data.reduce((sum, item) => sum + item.rating, 0)
-    averageRating.value = (total / data.length).toFixed(1)
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('rating')
+      .eq('rider_id', riderId) // Filter by rider ID
+      .not('rating', 'is', null) // Exclude bookings without ratings
+
+    if (error) {
+      console.error('Error fetching average rating:', error)
+      return
+    }
+
+    if (data.length > 0) {
+      const total = data.reduce((sum, item) => sum + item.rating, 0)
+      averageRating.value = (total / data.length).toFixed(1)
+    }
+  } catch (err) {
+    console.error('Unexpected error fetching average rating:', err)
   }
 }
 
@@ -210,7 +222,7 @@ onMounted(() => {
           </v-card>
           <div class="d-flex justify-center align-center">
             <h3 text-h6>Ratings:</h3>
-            <v-rating :Value="averageRating" readonly active-color="purple-darken-3" />
+            <v-rating :value="averageRating" readonly active-color="purple-darken-3" />
           </div>
         </v-col>
       </v-row>

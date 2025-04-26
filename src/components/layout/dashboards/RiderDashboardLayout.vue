@@ -7,12 +7,6 @@ import ProfileNavigation from '../navigations/ProfileNavigation.vue'
 const { mobile, mdAndUp, smAndDown } = useDisplay() // Ensure mdAndUp is destructured
 const drawer = ref(true) // Set default to true
 
-const items = ref([
-  { title: 'Rider Name', text: 'Ride Was Canelled' },
-  { title: 'Notif 2' },
-  { title: 'Notif 3' },
-])
-
 // Define hideDisplay (example: set to false by default)
 const hideDisplay = ref(false)
 
@@ -44,8 +38,7 @@ onMounted(() => {
       <!-- Bottom Navigation for Mobile -->
       <v-bottom-navigation v-if="mobile" grow class="mobile-nav">
         <v-btn icon to="/message">
-          <v-icon color="purple-darken-3">mdi-chat-outline</v-icon>
-          Message
+          <v-icon color="purple-darken-3" size="50">mdi-chat-outline</v-icon>
         </v-btn>
         <!-- Notification Button and Menu -->
         <!-- <v-btn icon>
@@ -78,15 +71,15 @@ onMounted(() => {
         <v-spacer></v-spacer>
 
         <v-col
-          cols="3"
-          md="2"
+          cols="12"
+          md="1"
           sm="3"
           xs="4"
-          class="d-flex justify-center align-center ga-1"
+          class="d-flex justify-center align-center ga-6"
           v-if="mobile ? hideDisplay : !hideDisplay"
         >
           <!-- Notification Button and Menu -->
-          <div class="text-center">
+          <!-- <div class="text-center">
             <v-menu location="end" offset-y width="300px" transition="scale-transition">
               <template v-slot:activator="{ props }">
                 <v-btn color="primary" v-bind="props">
@@ -110,9 +103,9 @@ onMounted(() => {
                 </v-list-item>
               </v-list>
             </v-menu>
-          </div>
+          </div> -->
           <v-btn icon to="/message">
-            <v-icon size="30" color="purple-darken-3">mdi-chat-outline</v-icon>
+            <v-icon size="50" color="purple-darken-3">mdi-chat-outline</v-icon>
           </v-btn>
           <!-- ProfileNavigation   Pending-->
           <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>
