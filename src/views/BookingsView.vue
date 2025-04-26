@@ -92,8 +92,24 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
-const colors = ['indigo', 'warning', 'pink darken-2']
-const slides = ['/public/images/c10.png', '/public/images/c16.png']
+const slides = [
+  {
+    image: '/public/images/c10.png',
+    title: 'Fast & Reliable Service',
+    description: 'Get to your destination on time, every time',
+  },
+  {
+    image: '/public/images/c16.png',
+    title: 'Affordable Rides',
+    description: "Quality transportation that won't break the bank",
+  },
+  {
+    image: '/public/images/c10.png',
+    title: 'Safe Journeys',
+    description: 'Your safety is our top priority',
+  },
+]
+
 import { useDisplay } from 'vuetify'
 const { mobile } = useDisplay()
 
@@ -516,30 +532,32 @@ onMounted(() => {
     center.value = [coords.value.latitude, coords.value.longitude]
   }
 })
+
+// Computed property for responsive height
+const carouselHeight = computed(() => {
+  if (mobile.value) return '200'
+  return '400'
+})
 </script>
 
 <template>
   <DashboardLayout>
     <template #content>
-      <v-row>
-        <v-col :cols="mobile ? 12 : 8" class="mx-auto">
+      <v-row class="mt-5">
+        <v-col :cols="mobile ? 12 : 10" class="mx-auto">
           <v-carousel
-            :height="mobile ? '200' : '300'"
+            :height="carouselHeight"
             show-arrows="hover"
             cycle
             hide-delimiter-background
+            interval="5000"
+            progress="primary"
           >
-            <v-carousel-item v-for="(slide, i) in slides" :key="i">
-              <v-sheet :color="colors[i]" height="100%">
-                <div class="d-flex fill-height justify-center align-center">
-                  <v-img
-                    :src="slide"
-                    alt="Slide Image"
-                    :height="mobile ? '200' : '300'"
-                    cover
-                  ></v-img>
-                </div>
-              </v-sheet>
+            <v-carousel-item v-for="(slide, i) in slides" :key="i" :src="slide.image" cover>
+              <div class="carousel-gradient d-flex flex-column justify-end align-start pa-6">
+                <h2 class="text-white text-h3 font-weight-bold">{{ slide.title }}</h2>
+                <p class="text-white text-subtitle-1 mt-2">{{ slide.description }}</p>
+              </div>
             </v-carousel-item>
           </v-carousel>
         </v-col>
@@ -774,5 +792,16 @@ onMounted(() => {
     transform: scale(2);
     opacity: 0;
   }
+}
+
+.carousel-gradient {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  height: 100%;
+  width: 100%;
 }
 </style>

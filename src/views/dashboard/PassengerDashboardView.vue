@@ -135,10 +135,6 @@ const carouselHeight = computed(() => {
               <div class="carousel-gradient d-flex flex-column justify-end align-start pa-6">
                 <h2 class="text-white text-h3 font-weight-bold">{{ slide.title }}</h2>
                 <p class="text-white text-subtitle-1 mt-2">{{ slide.description }}</p>
-                <v-btn color="purple-darken-2" class="mt-3" variant="elevated" size="large">
-                  Book Now
-                  <v-icon end icon="mdi-arrow-right"></v-icon>
-                </v-btn>
               </div>
             </v-carousel-item>
           </v-carousel>
