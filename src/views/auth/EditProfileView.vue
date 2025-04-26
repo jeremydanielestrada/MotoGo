@@ -1,5 +1,28 @@
 <script setup>
-import { ref } from 'vue'
+// import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { getAvatarText } from '@/utils/helpers'
+import { supabase, formActionDefault, getuserInformation } from '@/utils/supabase'
+import { useRouter } from 'vue-router'
+const router = useRouter()
+
+const userData = ref({
+  initials: '',
+  email: '',
+  fullname: '',
+})
+// USER INFORMATION
+const getuser = async () => {
+  const userMetaData = await getuserInformation()
+
+  userData.value.email = userMetaData.email
+  userData.value.fullname = userMetaData.firstname + ' ' + userMetaData.lastname
+  userData.value.initials = getAvatarText(userData.value.fullname)
+}
+
+onMounted(() => {
+  getuser()
+})
 
 const profilePhoto = ref('/images/ava.png')
 
@@ -70,7 +93,8 @@ function onProfileChange(e) {
 
     <div class="text-center mt-8">
       <h2 class="text-h4 font-weight-bold">
-        Ava Tar<v-icon color="blue" size="20" class="ml-2" title="Verified User">
+        {{ userData.fullname
+        }}<v-icon color="blue" size="20" class="ml-2" title="Verified User">
           mdi-check-decagram
         </v-icon>
       </h2>
