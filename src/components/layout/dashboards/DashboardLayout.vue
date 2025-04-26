@@ -6,6 +6,8 @@ import ProfileNavigation from '../navigations/ProfileNavigation.vue'
 import { useBookingStore } from '@/stores/bookings'
 import { useRoute } from 'vue-router'
 
+const icons = ['mdi-facebook', 'mdi-twitter', 'mdi-linkedin', 'mdi-instagram']
+
 const { mobile } = useDisplay()
 const bookingStore = useBookingStore()
 const route = useRoute()
@@ -100,8 +102,12 @@ const isActive = (path) => route.path === path
         </div>
 
         <!-- mobile-notification-bell -->
-        <v-btn " v-if="mobile" to="/mobile-notifications">
-          <v-icon size="30" :color="bookingStore.subscribeToBookingUpdates() ? 'purple-lighten-4' : 'null'">mdi-bell-outline</v-icon>
+        <v-btn v-if="mobile" to="/mobile-notifications">
+          <v-icon
+            size="30"
+            :color="bookingStore.subscribeToBookingUpdates() ? 'purple-lighten-4' : 'null'"
+            >mdi-bell-outline</v-icon
+          >
         </v-btn>
 
         <v-col
