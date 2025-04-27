@@ -66,7 +66,7 @@ function handleToggleNavigation(state) {
           <v-card flat class="py-4 px-3" elevation="0">
             <v-row>
               <v-col cols="12" class="d-flex align-center">
-                <router-link to="passenger-dashboard">
+                <router-link to="/system/passenger-dashboard">
                   <v-icon size="30" class="mr-2">mdi-keyboard-backspace</v-icon>
                 </router-link>
                 <h2 class="text-h6 font-weight-bold mb-0">Chats</h2>
