@@ -18,30 +18,72 @@ const locationStore = useLocationStore()
 const currentPosition = useGeolocation()
 const destinationCoords = ref(null)
 
-//
+// map initialization
 const initMap = () => {
   if (!map.value) {
-    map.value = L.map('map').setView(
-      [currentPosition.latitude.value, currentPosition.longitude.value],
-      13,
-    )
+    try {
+      map.value = L.map('map')
+      
+      // Set initial view with error handling
+      if (currentPosition.latitude.value && currentPosition.longitude.value) {
+        map.value.setView(
+          [currentPosition.latitude.value, currentPosition.longitude.value],
+          13
+        )
+      } else {
+        console.warn('No current position available, using default coordinates')
+        map.value.setView([8.948056, 125.543056], 13) // Default to Philippines
+      }
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-    }).addTo(map.value)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18,
+        minZoom: 3
+      }).addTo(map.value)
+
+      // Add error handling for tile loading
+      map.value.on('tileerror', (error, tile) => {
+        console.error('Tile loading error:', error)
+      })
+
+    } catch (error) {
+      console.error('Error initializing map:', error)
+      // You might want to show an error message to the user here
+    }
   }
 }
 
 const generateRoute = async () => {
   if (!destinationCoords.value) return
 
-  const start = [currentPosition.longitude.value, currentPosition.latitude.value]
-  const end = [destinationCoords.value.lng, destinationCoords.value.lat]
+
+    //validate coordinates
+  const start = [currentPosition.latitude.value, currentPosition.longitude.value]
+  const end = [destinationCoords.value.lat, destinationCoords.value.lng]
+
+ //Validate coordinates are valid numbers
+  if(!start.every(coord => !isNaN(coord)) || !end.every(coord => !isNaN(coord))){
+      console.error('Invalid coordinates provided')
+      return
+   }
+
+
+
 
   try {
+
+    routeLoading.value = true
+    routeError.value = null
+
     const response = await OpenRouteService.getRoute(start, end)
+ 
+    if (!response || !response.routes || response.routes.length === 0) {
+      throw new Error('No routes found for the given coordinates')
+    }
+
+
     const routeGeoJSON = L.geoJSON(response.routes[0].geometry, {
-      style: { color: 'blue', weight: 4 },
+      style: { color: 'red', weight: 4 },
     })
 
     if (routeLayer.value) {
@@ -52,6 +94,10 @@ const generateRoute = async () => {
     map.value.fitBounds(routeGeoJSON.getBounds())
   } catch (error) {
     console.error('Error generating route:', error)
+    console.error('Error generating route:', error)
+    routeError.value = error.message || 'Failed to generate route'
+  } finally {
+    routeLoading.value = false
   }
 }
 
@@ -106,8 +152,8 @@ L.Icon.Default.mergeOptions({
 
 const router = useRouter()
 const map = ref(null)
-const zoom = ref(11)
-const center = ref([12.8797, 121.774]) // Default center (Philippines)
+const zoom = ref(15)
+const center = ref([8.9475, 125.5406]) // Default center (Philippines)
 const loading = ref(false)
 const bookingComplete = ref(false)
 const bookingReference = ref('')
@@ -126,7 +172,7 @@ const dropoffIcon = 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.
 const currentLocationIcon = ref(null) // Will create a custom icon for current location
 
 // OpenRouteService API key - replace with your own API key
-const ORS_API_KEY = '5b3ce3597851110001cf6248c205cf9c26d84099907afd1e86c6766c'
+const ORS_API_KEY = import.meta.env.VITE_OPENROUTESERVICE_API_KEY
 
 // Create custom icon for current location
 onMounted(() => {
@@ -139,7 +185,7 @@ onMounted(() => {
 })
 
 // API key for geocoding service
-const GEOCODING_API_KEY = '1cdf6200a1854ae2bdb46779f9c9d1ab'
+const GEOCODING_API_KEY =  import.meta.env.VITE_GEOCODING_API_KEY
 
 // Suggestions for pickup and dropoff
 const pickupSuggestions = ref([])
