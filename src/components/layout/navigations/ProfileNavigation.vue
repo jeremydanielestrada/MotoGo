@@ -64,7 +64,9 @@ onMounted(() => {
             {{ userData.email }}
           </p>
           <v-divider class="my-3"></v-divider>
-          <v-btn variant="text" rounded prepend-icon="mdi-cog-outline"> Edit Account </v-btn>
+          <v-btn to="/edit-profile" variant="text" rounded prepend-icon="mdi-cog-outline">
+            Edit Account
+          </v-btn>
           <v-divider class="my-3"></v-divider>
           <v-btn
             variant="text"
