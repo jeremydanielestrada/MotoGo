@@ -20,6 +20,7 @@ watch(
   (newValue) => {
     drawer.value = newValue
   },
+  { immediate: true },
 )
 
 watch(drawer, (newValue) => {
@@ -57,12 +58,7 @@ watch(
 </script>
 
 <template>
-  <v-navigation-drawer
-    v-if="smAndDown"
-    v-model="drawer"
-    :location="smAndDown ? 'left' : null"
-    :width="400"
-  >
+  <v-navigation-drawer v-if="smAndDown" v-model="drawer" :location="'left'" :width="400">
     <v-list>
       <v-list-item
         flat

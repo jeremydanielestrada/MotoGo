@@ -1,11 +1,16 @@
 <script setup>
 import DashboardLayout from '../layout/dashboards/DashboardLayout.vue'
-import { ref } from 'vue'
-const items = ref([
-  { title: 'Rider Name', text: 'Ride Was Canelled' },
-  { title: 'Notif 2' },
-  { title: 'Notif 3' },
-])
+import { onMounted, onUnmounted } from 'vue'
+import { useBookingStore } from '@/stores/bookings'
+
+const bookingStore = useBookingStore()
+
+onMounted(() => {
+  bookingStore.subscribeToBookingUpdates()
+})
+onUnmounted(() => {
+  bookingStore.unsubscribeFromBookingUpdates()
+})
 </script>
 
 <template>
@@ -18,15 +23,11 @@ const items = ref([
             <v-list class="overflow-y-auto" style="max-height: 400px">
               <h3 class="text-h6">Notifications</h3>
               <v-list-item
-                v-for="(item, index) in items"
-                :key="index"
-                :value="index"
+                v-for="notif in bookingStore.bookingNotifications"
+                :key="notif.id"
                 class="border-thin"
               >
-                <v-list-item-title
-                  ><b>{{ item.title }}</b></v-list-item-title
-                >
-                <span> {{ item.text }}</span>
+                <span> {{ notif.message }} ({{ notif.timestamp }})</span>
               </v-list-item>
             </v-list>
           </div>

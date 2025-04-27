@@ -1,15 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '@/views/auth/LoginView.vue'
-import PassengerDashboard from '@/components/system/dashboard/PassengerDashboard.vue'
-import MessageView from '@/views/auth/MessageView.vue'
-import Bookings from '@/components/system/transactions/Bookings.vue'
-import RiderDashboard from '@/components/system/dashboard/RiderDashboard.vue'
+import MessageView from '@/views/MessageView.vue'
 import MobileNotifacations from '@/components/common/MobileNotifacations.vue'
 import { isAuthenticated, getuserInformation } from '@/utils/supabase'
 import NotFoundView from '@/views/errors/NotFoundView.vue'
 import ForbiddenView from '@/views/errors/ForbiddenView.vue'
+
 import EditProfileView from '@/views/auth/EditProfileView.vue'
 
+import PassengerDashboardView from '@/views/dashboard/PassengerDashboardView.vue'
+import RiderDashboardView from '@/views/dashboard/RiderDashboardView.vue'
+import BookingsView from '@/views/BookingsView.vue'
+import HistoryView from '@/views/HistoryView.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -22,7 +24,7 @@ const router = createRouter({
     {
       path: '/system/passenger-dashboard',
       name: 'PassengerDashboard',
-      component: PassengerDashboard,
+      component: PassengerDashboardView,
       meta: { requiresAuth: true },
     },
     {
@@ -34,15 +36,22 @@ const router = createRouter({
     {
       path: '/bookings',
       name: 'bookings',
-      component: Bookings,
+      component: BookingsView,
       meta: { requiresAuth: true },
     },
 
     {
       path: '/system/rider-dashboard',
       name: 'RiderDashboard',
-      component: RiderDashboard,
+      component: RiderDashboardView,
       meta: { requiresAuth: true, requiresDriver: true },
+    },
+
+    {
+      path: '/history',
+      name: 'History',
+      component: HistoryView,
+      meta: { requiresAuth: true },
     },
 
     {
@@ -73,10 +82,6 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const isLoggedIn = await isAuthenticated()
 
-  // if (to.name === 'home' && isLoggedIn) {
-  //   return isDriver ? { name: 'RiderDashboard' } : { name: 'PassengerDashboard' }
-  // }
-
   if (!isLoggedIn) {
     // If route requires auth but user is not logged in
     if (to.meta.requiresAuth) {
@@ -102,8 +107,8 @@ router.beforeEach(async (to) => {
     return { name: 'forbidden' }
   }
 
-  // If route requires driver but user is not driver
-  if (to.meta.requiresDriver && !isDriver) {
+  // If route requires driver but user is not driver, allow admin access
+  if (to.meta.requiresDriver && !isDriver && !isAdmin) {
     return { name: 'forbidden' }
   }
 
