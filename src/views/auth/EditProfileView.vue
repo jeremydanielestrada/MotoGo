@@ -4,6 +4,7 @@ import { ref, onMounted } from 'vue'
 import { getAvatarText } from '@/utils/helpers'
 import { supabase, formActionDefault, getuserInformation } from '@/utils/supabase'
 import { useRouter } from 'vue-router'
+import { watch } from 'vue' // FOR THE DETAILS
 const router = useRouter()
 
 const userData = ref({
@@ -24,14 +25,25 @@ onMounted(() => {
   getuser()
 })
 
-const profilePhoto = ref('/images/ava.png')
+// EDIT FOR DETAILS
+const plateNumber = ref(localStorage.getItem('plateNumber') || '')
+const phoneNumber = ref(localStorage.getItem('phoneNumber') || '')
+const isEditing = ref(false)
+const isPhoneNum = ref(false)
+// automatically save whenever you change plateNumber
+watch(plateNumber, (newVal) => {
+  localStorage.setItem('plateNumber', newVal)
+})
 
-const dialog = ref(false) // for profile picture dialog
+// automatically save whenever you change phoneNumber
+watch(phoneNumber, (newVal) => {
+  localStorage.setItem('phoneNumber', newVal)
+})
+// RATING
 const rating = ref(3.5)
-function onCoverChange(e) {
-  const file = e.target.files[0]
-  if (file) coverPhoto.value = URL.createObjectURL(file)
-}
+
+// PROFILE PHOTO CHANGER
+const profilePhoto = ref('/images/ava.png')
 
 function onProfileChange(e) {
   const file = e.target.files[0]
@@ -45,7 +57,10 @@ function onProfileChange(e) {
     <!-- Cover Photo -->
     <v-card>
       <div class="background-pic" elevation="5">
-        <v-img :src="coverPhoto" height="300px" class="bg-purple-lighten-4">
+        <v-img :src="coverPhoto" height="200px" class="bg-purple-lighten-4">
+          <router-link to="/system/passenger-dashboard">
+            <v-icon size="30" class="ml-4 mt-2">mdi-keyboard-backspace</v-icon>
+          </router-link>
           <input
             type="file"
             ref="coverInput"
@@ -98,9 +113,9 @@ function onProfileChange(e) {
           mdi-check-decagram
         </v-icon>
       </h2>
+      <!-- IF RIDER, PASSENGER, OR ADMIN BA -->
       <p class="text-body-3 text-medium-emphasis">Rider</p>
     </div>
-    <br />
     <br />
 
     <!-- DETAILS -->
@@ -113,9 +128,55 @@ function onProfileChange(e) {
               <h2 class="ml-2">Details:</h2>
               <v-list-item>
                 <v-list-item-content>
-                  <v-list-item-title>Plate Number: SZA123</v-list-item-title>
+                  <v-list-item-title>
+                    Plate Number:
+                    <div
+                      v-if="!isEditing"
+                      @click="isEditing = true"
+                      style="display: inline-flex; align-items: center; cursor: pointer"
+                    >
+                      <span>{{ plateNumber }}</span>
+                      <v-icon size="15" class="ml-2">mdi-pencil</v-icon>
+                    </div>
+                    <v-text-field
+                      v-else
+                      v-model="plateNumber"
+                      variant="underlined"
+                      size="15"
+                      append-icon="mdi-check"
+                      @click:append="isEditing = false"
+                      style="display: inline-flex"
+                      class="ma-0 pa-0"
+                      hide-details
+                      single-line
+                      density="compact"
+                    />
+                  </v-list-item-title>
                   <v-divider class="pb-2"></v-divider>
-                  <v-list-item-title>Phone Number: 09123456789</v-list-item-title>
+                  <v-list-item-title
+                    >Phone Number:
+                    <div
+                      v-if="!isPhoneNum"
+                      @click="isPhoneNum = true"
+                      style="display: inline-flex; align-items: center; cursor: pointer"
+                    >
+                      <span>{{ phoneNumber }}</span>
+                      <v-icon size="15" class="ml-2">mdi-pencil</v-icon>
+                    </div>
+                    <v-text-field
+                      v-else
+                      v-model="phoneNumber"
+                      variant="underlined"
+                      size="15"
+                      append-icon="mdi-check"
+                      @click:append="isPhoneNum = false"
+                      style="display: inline-flex"
+                      class="ma-0 pa-0"
+                      hide-details
+                      single-line
+                      density="compact"
+                    />
+                  </v-list-item-title>
                   <v-divider class="pb-2"></v-divider>
                 </v-list-item-content>
               </v-list-item>
@@ -137,11 +198,6 @@ function onProfileChange(e) {
                 hover
               ></v-rating>
             </div>
-            <v-list-item>
-              <v-list-item-content class="text-center">
-                <v-list-item-subtitle>Joined June 2025</v-list-item-subtitle>
-              </v-list-item-content>
-            </v-list-item>
           </v-card>
         </v-col>
       </v-row>
@@ -156,7 +212,7 @@ function onProfileChange(e) {
 
 .profile-avatar {
   position: absolute;
-  top: 250px;
+  top: 150px;
   left: 50%;
   transform: translateX(-50%);
   border: 4px solid #ba68c8;
@@ -191,5 +247,9 @@ function onProfileChange(e) {
 }
 .card-details {
   padding: 20px;
+}
+.editing-area {
+  width: 50%;
+  display: inline-flex;
 }
 </style>
