@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { supabase } from '@/utils/supabase'
 
@@ -7,6 +7,19 @@ export const useMessageStore = defineStore('messages', () => {
   const messages = ref([])
   const isLoading = ref(false)
   const error = ref(null)
+  const activeSubscription = ref(null)
+
+  // Computed
+  const userId = computed(() => {
+    // Get user ID from Supabase
+    try {
+      const session = supabase.auth.session()
+      return session?.user?.id
+    } catch (error) {
+      console.error('Error getting user ID:', error)
+      return null
+    }
+  })
 
   // Get all messages for the current user
   async function fetchMessages() {
@@ -33,9 +46,15 @@ export const useMessageStore = defineStore('messages', () => {
 
       // Now fetch messages using the user ID
       const { data, error: msgError } = await supabase
-        .from('messages') // Replace with your actual table name
-        .select('*')
-        .or(`rider_id.eq.${userId},passenger_id.eq.${userId}`) // Updated column names
+        .from('messages')
+        .select(
+          `
+          *,
+          riders:rider_id(id, user_metadata),
+          passengers:passenger_id(id, user_metadata)
+        `,
+        )
+        .or(`rider_id.eq.${userId},passenger_id.eq.${userId}`)
         .order('created_at', { ascending: false })
 
       if (msgError) {
@@ -44,14 +63,104 @@ export const useMessageStore = defineStore('messages', () => {
         return
       }
 
-      // Process and group messages as needed
-      // This is a simplified example - adjust according to your data structure
-      messages.value = data || []
+      // Process messages to include profile information
+      const processedMessages = (data || []).map((msg) => {
+        // Extract names from metadata
+        const riderName =
+          msg.riders?.user_metadata?.firstname + ' ' + msg.riders?.user_metadata?.lastname ||
+          'Rider'
+        const passengerName =
+          msg.passengers?.user_metadata?.firstname +
+            ' ' +
+            msg.passengers?.user_metadata?.lastname || 'Passenger'
+
+        return {
+          ...msg,
+          rider_name: riderName,
+          passenger_name: passengerName,
+        }
+      })
+
+      messages.value = processedMessages
+      setupMessageSubscription(userId)
     } catch (err) {
       console.error('Unexpected error in fetchMessages:', err)
       error.value = 'Unexpected error occurred'
     } finally {
       isLoading.value = false
+    }
+  }
+
+  // Set up real-time subscription to messages
+  function setupMessageSubscription(userId) {
+    // Clean up any existing subscription
+    if (activeSubscription.value) {
+      supabase.removeSubscription(activeSubscription.value)
+    }
+
+    // Subscribe to changes
+    activeSubscription.value = supabase
+      .channel('messages-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `rider_id=eq.${userId},passenger_id=eq.${userId}`,
+        },
+        (payload) => {
+          console.log('New message received:', payload)
+          // Fetch the complete message with profiles
+          fetchMessageById(payload.new.id)
+        },
+      )
+      .subscribe()
+  }
+
+  // Fetch a single message by ID
+  async function fetchMessageById(messageId) {
+    try {
+      const { data, error: msgError } = await supabase
+        .from('messages')
+        .select(
+          `
+          *,
+          riders:rider_id(id, user_metadata),
+          passengers:passenger_id(id, user_metadata)
+        `,
+        )
+        .eq('id', messageId)
+        .single()
+
+      if (msgError) {
+        console.error('Error fetching message:', msgError.message)
+        return
+      }
+
+      if (!data) return
+
+      // Extract names from metadata
+      const riderName =
+        data.riders?.user_metadata?.firstname + ' ' + data.riders?.user_metadata?.lastname ||
+        'Rider'
+      const passengerName =
+        data.passengers?.user_metadata?.firstname +
+          ' ' +
+          data.passengers?.user_metadata?.lastname || 'Passenger'
+
+      const processedMessage = {
+        ...data,
+        rider_name: riderName,
+        passenger_name: passengerName,
+      }
+
+      // Add to messages if not already there
+      if (!messages.value.some((msg) => msg.id === processedMessage.id)) {
+        messages.value = [processedMessage, ...messages.value]
+      }
+    } catch (err) {
+      console.error('Error fetching single message:', err)
     }
   }
 
@@ -75,9 +184,9 @@ export const useMessageStore = defineStore('messages', () => {
 
       // Insert the message
       const { data, error: msgError } = await supabase
-        .from('messages') // Replace with your actual table name
+        .from('messages')
         .insert({
-          rider_id: sender_id, // Updated column name
+          rider_id: sender_id,
           passenger_id,
           content,
           created_at: new Date().toISOString(),
@@ -89,13 +198,19 @@ export const useMessageStore = defineStore('messages', () => {
         return { error: msgError.message }
       }
 
-      // Optionally refresh messages after sending
-      await fetchMessages()
-
+      // No need to fetch messages again as the subscription will handle it
       return { data }
     } catch (err) {
       console.error('Unexpected error in sendMessage:', err)
       return { error: 'Unexpected error occurred' }
+    }
+  }
+
+  // Clean up subscriptions
+  function cleanup() {
+    if (activeSubscription.value) {
+      supabase.removeSubscription(activeSubscription.value)
+      activeSubscription.value = null
     }
   }
 
@@ -105,5 +220,6 @@ export const useMessageStore = defineStore('messages', () => {
     error,
     fetchMessages,
     sendMessage,
+    cleanup,
   }
 })

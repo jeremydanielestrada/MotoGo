@@ -1,16 +1,18 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue' // Import ref
+import { ref, watch, onMounted } from 'vue'
 import { useDisplay } from 'vuetify'
 
 const { mdAndUp, smAndDown } = useDisplay()
 
-// Accept the modelValue prop
 const props = defineProps({
   modelValue: Boolean,
+  chats: {
+    type: Array,
+    default: () => [],
+  },
 })
 
-// Emit updates to the parent
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'select-chat'])
 
 // Use a local ref for drawer and synchronize with modelValue
 const drawer = ref(props.modelValue)
@@ -26,16 +28,6 @@ watch(
 watch(drawer, (newValue) => {
   emit('update:modelValue', newValue)
 })
-
-import avatarImage from '/images/ava.png' // Adjust the path as needed
-
-const messages = ref([
-  {
-    text: 'Hello, how can I help you today?',
-    from: 'Avatar',
-    ava: avatarImage,
-  },
-])
 
 onMounted(() => {
   // Ensure the drawer starts closed on mount
@@ -55,26 +47,42 @@ watch(
   },
   { immediate: true },
 )
+
+function selectChat(chat) {
+  emit('select-chat', chat)
+  drawer.value = false
+}
 </script>
 
 <template>
-  <v-navigation-drawer v-if="smAndDown" v-model="drawer" :location="'left'" :width="400">
+  <v-navigation-drawer v-if="smAndDown" v-model="drawer" :location="'left'" :width="300">
     <v-list>
+      <v-list-item class="d-flex justify-space-between pa-4">
+        <h2 class="text-h6">Chats</h2>
+        <v-btn icon @click="drawer = false">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-list-item>
+
+      <v-divider></v-divider>
+
+      <v-list-item v-if="props.chats.length === 0" class="pa-4 text-center">
+        No conversations yet
+      </v-list-item>
+
       <v-list-item
-        flat
-        class="mt-3 cursor-pointer"
-        elevation="0"
-        v-for="(msg, index) in messages"
+        v-for="(chat, index) in props.chats"
         :key="index"
-        style="border: 1px solid #ddd; border-radius: 8px; margin: 0"
+        class="pa-2 cursor-pointer"
+        @click="selectChat(chat)"
       >
-        <div class="d-flex align-center me-10">
-          <img :src="msg.ava" alt="Avatar" width="50" class="avatar-img" />
+        <div class="d-flex align-center">
+          <img :src="chat.ava" alt="Avatar" width="40" class="avatar-img mr-3" />
           <div class="title-container">
-            <v-card-title class="text-h6 mb-1">{{ msg.from }}</v-card-title>
-            <v-card-subtitle class="text-subtitle-2 text-truncate">
-              {{ msg.text }}
-            </v-card-subtitle>
+            <div class="text-subtitle-1 font-weight-medium">{{ chat.name }}</div>
+            <div class="text-caption text-truncate" style="max-width: 180px">
+              {{ chat.lastMessage }}
+            </div>
           </div>
         </div>
       </v-list-item>
@@ -85,18 +93,12 @@ watch(
 <style scoped>
 .avatar-img {
   border-radius: 100%;
-  padding: 5px;
+  padding: 2px;
 }
 
 .title-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin-right: 30px;
-}
-
-.title-container .v-card-title {
-  margin-bottom: 0;
-  line-height: 1.2;
 }
 </style>

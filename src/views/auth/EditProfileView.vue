@@ -19,39 +19,106 @@ const userData = ref({
   image_url: '',
 })
 
+// const onFileChange = async (event) => {
+//   const file = event.target.files[0]
+//   if (!file) return
+
+//   // Make sure userData.value.id exists
+//   if (!userData.value.id) {
+//     alert('User data not loaded yet. Please wait.')
+//     console.log(userData.id)
+//     return
+//   }
+
+//   const result = await uploadImg.updateUserImage(file, userData.value.id)
+//   if (result && !result.error) {
+//     // Update the local userData with new image URL
+//     userData.value.image_url = result.image_url
+//     console.log('Updated image_url:', userData.value.image_url)
+//   } else {
+//     // Handle error (show notification, etc.)
+//     alert('Failed to upload image')
+//   }
+// }
+
+
+
+// const onFileChange = async (event) => {
+//   const file = event.target.files[0]
+//   if (!file) return
+
+//   // Make sure userData.value.id exists
+//   if (!userData.value.id) {
+//     alert('User data not loaded yet. Please wait.')
+//     console.log(userData.value.id)
+//     return
+//   }
+
+//   try {
+//     await uploadImg.updateUserImage(file, userData.value.id)
+//     // After successful upload, refresh user data
+//     await getuser()  // This will fetch the updated user info including the new image_url
+//   } catch (error) {
+//     console.error('Error updating image:', error)
+//     alert('Failed to upload image')
+//   }
+// }
+
+
+
+
+/// working function
 const onFileChange = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
-  // Make sure userData.value.id exists
-  if (!userData.value.id) {
-    alert('User data not loaded yet. Please wait.')
-    console.log(userData.id)
-    return
-  }
-
-  const result = await uploadImg.updateUserImage(file, userData.value.id)
-  if (result && !result.error) {
-    // Update the local userData with new image URL
-    userData.value.image_url = result.image_url
-    console.log('Updated image_url:', userData.value.image_url)
-  } else {
-    // Handle error (show notification, etc.)
+  try {
+    await uploadImg.updateUserImage(file, userData.value.id)
+    // Force a refresh of user data
+    await getuser()
+    // Force component re-render
+    userData.value = {...userData.value}
+  } catch (error) {
+    console.error('Error updating image:', error)
     alert('Failed to upload image')
   }
 }
 
 // USER INFORMATION
+// const getuser = async () => {
+//   loadingUser.value = true
+//   const userMetaData = await getuserInformation()
+
+//   if (!userMetaData || !userMetaData.id) {
+//     alert('User not logged in or user data not available!')
+//     return
+//   }
+
+//   userData.value.id = userMetaData.id
+//   userData.value.email = userMetaData.email
+//   userData.value.fullname = userMetaData.firstname + ' ' + userMetaData.lastname
+//   userData.value.initials = getAvatarText(userData.value.fullname)
+//   userData.value.is_driver = userMetaData?.is_driver
+//   userData.value.phone_num = userMetaData.phone
+//   userData.value.image_url = userMetaData.image_url
+//   loadingUser.value = false
+// }
+
+
+
+
 const getuser = async () => {
   loadingUser.value = true
   const userMetaData = await getuserInformation()
-  console.log('userMetaData:', userMetaData)
 
   if (!userMetaData || !userMetaData.id) {
     alert('User not logged in or user data not available!')
+    loadingUser.value = false
     return
   }
 
+  console.log('Retrieved user data:', userMetaData)  // Add this to debug
+  
   userData.value.id = userMetaData.id
   userData.value.email = userMetaData.email
   userData.value.fullname = userMetaData.firstname + ' ' + userMetaData.lastname
@@ -59,12 +126,25 @@ const getuser = async () => {
   userData.value.is_driver = userMetaData?.is_driver
   userData.value.phone_num = userMetaData.phone
   userData.value.image_url = userMetaData.image_url
+  
+  console.log('Updated userData image_url:', userData.value.image_url)  // Add this to debug
+  
   loadingUser.value = false
 }
+
+
+
+
+
 
 onMounted(() => {
   getuser()
 })
+
+
+
+
+
 
 // EDIT FOR DETAILS
 const plateNumber = ref(localStorage.getItem('plateNumber') || '')
@@ -112,7 +192,10 @@ const fallbackImage = ref('/images/ava.png')
     <!-- Profile Picture -->
     <div>
       <v-avatar size="150" class="profile-avatar elevation-4">
-        <v-img class="image-profile" :src="userData.image_url || fallbackImage" />
+        <v-img 
+        class="image-profile" 
+         :src="userData.image_url ? `${userData.image_url}?t=${Date.now()}` : fallbackImage"
+         :key="Date.now()" />
         <v-btn icon class="ma-1 button-cover" @click.stop="$refs.profileInput.click()">
           <v-icon size="20">mdi-camera</v-icon>
         </v-btn>
