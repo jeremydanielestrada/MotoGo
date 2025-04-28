@@ -47,13 +47,7 @@ export const useMessageStore = defineStore('messages', () => {
       // Now fetch messages using the user ID
       const { data, error: msgError } = await supabase
         .from('messages')
-        .select(
-          `
-          *,
-          riders:rider_id(id, user_metadata),
-          passengers:passenger_id(id, user_metadata)
-        `,
-        )
+        .select('*')
         .or(`rider_id.eq.${userId},passenger_id.eq.${userId}`)
         .order('created_at', { ascending: false })
 
@@ -66,13 +60,8 @@ export const useMessageStore = defineStore('messages', () => {
       // Process messages to include profile information
       const processedMessages = (data || []).map((msg) => {
         // Extract names from metadata
-        const riderName =
-          msg.riders?.user_metadata?.firstname + ' ' + msg.riders?.user_metadata?.lastname ||
-          'Rider'
-        const passengerName =
-          msg.passengers?.user_metadata?.firstname +
-            ' ' +
-            msg.passengers?.user_metadata?.lastname || 'Passenger'
+        const riderName = msg.rider_name || 'Rider'
+        const passengerName = msg.passenger_name || 'Passenger'
 
         return {
           ...msg,
@@ -123,13 +112,7 @@ export const useMessageStore = defineStore('messages', () => {
     try {
       const { data, error: msgError } = await supabase
         .from('messages')
-        .select(
-          `
-          *,
-          riders:rider_id(id, user_metadata),
-          passengers:passenger_id(id, user_metadata)
-        `,
-        )
+        .select('*')
         .eq('id', messageId)
         .single()
 
@@ -140,14 +123,9 @@ export const useMessageStore = defineStore('messages', () => {
 
       if (!data) return
 
-      // Extract names from metadata
-      const riderName =
-        data.riders?.user_metadata?.firstname + ' ' + data.riders?.user_metadata?.lastname ||
-        'Rider'
-      const passengerName =
-        data.passengers?.user_metadata?.firstname +
-          ' ' +
-          data.passengers?.user_metadata?.lastname || 'Passenger'
+      // Use existing names if available or fetch them separately
+      const riderName = data.rider_name || 'Rider'
+      const passengerName = data.passenger_name || 'Passenger'
 
       const processedMessage = {
         ...data,
