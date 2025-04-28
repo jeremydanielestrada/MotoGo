@@ -3,6 +3,9 @@ import { ref, onMounted } from 'vue'
 import { getAvatarText } from '@/utils/helpers'
 import { supabase, formActionDefault, getuserInformation } from '@/utils/supabase'
 import { useRouter } from 'vue-router'
+import { useDisplay } from 'vuetify'
+
+const { mobile } = useDisplay()
 const router = useRouter()
 
 const userData = ref({

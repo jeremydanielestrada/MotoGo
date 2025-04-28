@@ -2,25 +2,64 @@
 import { ref, onMounted } from 'vue'
 import { getAvatarText } from '@/utils/helpers'
 import { getuserInformation } from '@/utils/supabase'
-import { watch } from 'vue' // FOR THE DETAILS
+import { watch } from 'vue'
+import { useAuthUserStore } from '@/stores/authUser'
+
+const uploadImg = useAuthUserStore()
+
+const loadingUser = ref(true)
 
 const userData = ref({
+  id: '',
   initials: '',
   email: '',
   fullname: '',
   is_driver: false,
   phone_num: '',
+  image_url: '',
 })
+
+const onFileChange = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // Make sure userData.value.id exists
+  if (!userData.value.id) {
+    alert('User data not loaded yet. Please wait.')
+    console.log(userData.id)
+    return
+  }
+
+  const result = await uploadImg.updateUserImage(file, userData.value.id)
+  if (result && !result.error) {
+    // Update the local userData with new image URL
+    userData.value.image_url = result.image_url
+    console.log('Updated image_url:', userData.value.image_url)
+  } else {
+    // Handle error (show notification, etc.)
+    alert('Failed to upload image')
+  }
+}
 
 // USER INFORMATION
 const getuser = async () => {
+  loadingUser.value = true
   const userMetaData = await getuserInformation()
+  console.log('userMetaData:', userMetaData)
 
+  if (!userMetaData || !userMetaData.id) {
+    alert('User not logged in or user data not available!')
+    return
+  }
+
+  userData.value.id = userMetaData.id
   userData.value.email = userMetaData.email
   userData.value.fullname = userMetaData.firstname + ' ' + userMetaData.lastname
   userData.value.initials = getAvatarText(userData.value.fullname)
   userData.value.is_driver = userMetaData?.is_driver
   userData.value.phone_num = userMetaData.phone
+  userData.value.image_url = userMetaData.image_url
+  loadingUser.value = false
 }
 
 onMounted(() => {
@@ -46,12 +85,7 @@ watch(phoneNumber, (newVal) => {
 const rating = ref(3.5)
 
 // PROFILE PHOTO CHANGER
-const profilePhoto = ref('/images/ava.png')
-
-function onProfileChange(e) {
-  const file = e.target.files[0]
-  if (file) profilePhoto.value = URL.createObjectURL(file)
-}
+const fallbackImage = ref('/images/ava.png')
 </script>
 
 <template>
@@ -78,7 +112,7 @@ function onProfileChange(e) {
     <!-- Profile Picture -->
     <div>
       <v-avatar size="150" class="profile-avatar elevation-4">
-        <v-img class="image-profile" :src="profilePhoto" />
+        <v-img class="image-profile" :src="userData.image_url || fallbackImage" />
         <v-btn icon class="ma-1 button-cover" @click.stop="$refs.profileInput.click()">
           <v-icon size="20">mdi-camera</v-icon>
         </v-btn>
@@ -87,8 +121,8 @@ function onProfileChange(e) {
           ref="profileInput"
           accept="image/*"
           class="d-none"
-          @change="onProfileChange"
-        />
+          @change="onFileChange"
+          :disabled="loadingUser"
       </v-avatar>
     </div>
 

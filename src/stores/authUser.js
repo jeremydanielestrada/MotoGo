@@ -77,11 +77,11 @@ export const useAuthUserStore = defineStore('authUser', () => {
   }
 
   // Update User Profile Image
-  async function updateUserImage(file) {
+  async function updateUserImage(file, userId) {
     // Upload the file with the user ID and file extension
     const { data, error } = await supabase.storage
       .from('profiles') /// have to change
-      .upload('avatars/' + userData.value.id + '-avatar.png', file, {
+      .upload('avatars/' + userId + '-avatar.png', file, {
         cacheControl: '3600',
         upsert: true,
       })
@@ -93,7 +93,7 @@ export const useAuthUserStore = defineStore('authUser', () => {
     // If no error set data to userData state with the image_url
     else if (data) {
       // Retrieve Image Public Url
-      const { data: imageData } = supabase.storage.from('shirlix').getPublicUrl(data.path)
+      const { data: imageData } = supabase.storage.from('profiles').getPublicUrl(data.path)
 
       // Update the user information with the new image_url
       return await updateUserInformation({ ...userData.value, image_url: imageData.publicUrl })
@@ -101,22 +101,23 @@ export const useAuthUserStore = defineStore('authUser', () => {
   }
 
   // Add Rating
-  // async function addRating(entityId, rating) {
-  //   const { data, error } = await supabase
-  //     .from('ratings') // Replace with your actual table name
-  //     .insert({
-  //       user_id: userData.value.id,
-  //       entity_id: entityId,
-  //       rating,
-  //     })
 
-  //   if (error) {
-  //     console.error('Error adding rating:', error.message)
-  //     return { error }
-  //   }
+  async function addRating(entityId, rating) {
+    const { data, error } = await supabase
+      .from('ratings') // Replace with your actual table name
+      .insert({
+        user_id: userData.value.id,
+        entity_id: entityId,
+        rating,
+      })
 
-  //   return { data }
-  // }
+    if (error) {
+      console.error('Error adding rating:', error.message)
+      return { error }
+    }
+
+    return { data }
+  }
 
   return {
     userData,
