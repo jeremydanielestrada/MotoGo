@@ -83,9 +83,7 @@ export const useMessageStore = defineStore('messages', () => {
   // Set up real-time subscription to messages
   function setupMessageSubscription(userId) {
     // Clean up any existing subscription
-    if (activeSubscription.value) {
-      supabase.removeSubscription(activeSubscription.value)
-    }
+    cleanup()
 
     // Subscribe to changes
     activeSubscription.value = supabase
@@ -187,7 +185,8 @@ export const useMessageStore = defineStore('messages', () => {
   // Clean up subscriptions
   function cleanup() {
     if (activeSubscription.value) {
-      supabase.removeSubscription(activeSubscription.value)
+      // Use the correct method to unsubscribe
+      supabase.channel(activeSubscription.value.topic || 'messages-changes').unsubscribe()
       activeSubscription.value = null
     }
   }

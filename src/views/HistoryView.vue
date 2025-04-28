@@ -30,6 +30,10 @@ async function submitRating(bookingId) {
 
 <template>
   <v-container>
+    <v-btn to="/system/passenger-dashboard">
+      <v-icon>mdi-keyboard-backspace</v-icon>
+      Back to home
+    </v-btn>
     <v-row>
       <v-col cols="12">
         <h1 class="text-h6 text-center">Booking History</h1>
