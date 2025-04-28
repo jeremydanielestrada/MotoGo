@@ -1,17 +1,17 @@
 <script setup>
-// import { ref } from 'vue'
 import { ref, onMounted } from 'vue'
 import { getAvatarText } from '@/utils/helpers'
-import { supabase, formActionDefault, getuserInformation } from '@/utils/supabase'
-import { useRouter } from 'vue-router'
+import { getuserInformation } from '@/utils/supabase'
 import { watch } from 'vue' // FOR THE DETAILS
-const router = useRouter()
 
 const userData = ref({
   initials: '',
   email: '',
   fullname: '',
+  is_driver: false,
+  phone_num: '',
 })
+
 // USER INFORMATION
 const getuser = async () => {
   const userMetaData = await getuserInformation()
@@ -19,6 +19,8 @@ const getuser = async () => {
   userData.value.email = userMetaData.email
   userData.value.fullname = userMetaData.firstname + ' ' + userMetaData.lastname
   userData.value.initials = getAvatarText(userData.value.fullname)
+  userData.value.is_driver = userMetaData?.is_driver
+  userData.value.phone_num = userMetaData.phone
 }
 
 onMounted(() => {
@@ -31,6 +33,7 @@ const phoneNumber = ref(localStorage.getItem('phoneNumber') || '')
 const isEditing = ref(false)
 const isPhoneNum = ref(false)
 // automatically save whenever you change plateNumber
+
 watch(plateNumber, (newVal) => {
   localStorage.setItem('plateNumber', newVal)
 })
@@ -57,7 +60,7 @@ function onProfileChange(e) {
     <!-- Cover Photo -->
     <v-card>
       <div class="background-pic" elevation="5">
-        <v-img :src="coverPhoto" height="200px" class="bg-purple-lighten-4">
+        <v-img src="coverPhoto" height="200px" class="bg-purple-lighten-4">
           <router-link to="/system/passenger-dashboard">
             <v-icon size="30" class="ml-4 mt-2">mdi-keyboard-backspace</v-icon>
           </router-link>
@@ -74,7 +77,7 @@ function onProfileChange(e) {
 
     <!-- Profile Picture -->
     <div>
-      <v-avatar size="150" class="profile-avatar elevation-4" @click="dialog = true">
+      <v-avatar size="150" class="profile-avatar elevation-4">
         <v-img class="image-profile" :src="profilePhoto" />
         <v-btn icon class="ma-1 button-cover" @click.stop="$refs.profileInput.click()">
           <v-icon size="20">mdi-camera</v-icon>
@@ -84,22 +87,11 @@ function onProfileChange(e) {
           ref="profileInput"
           accept="image/*"
           class="d-none"
-          @click="dialog = true"
           @change="onProfileChange"
         />
       </v-avatar>
     </div>
 
-    <!-- PROFILE DIALOG -->
-    <v-dialog v-model="dialog">
-      <v-btn icon class="close-btn" @click="dialog = false">
-        <v-icon>mdi-close</v-icon>
-      </v-btn>
-
-      <div class="d-flex justify-center">
-        <img class="image-profile" :src="profilePhoto" width="30%" />
-      </div>
-    </v-dialog>
     <br />
     <br />
     <br />
@@ -114,8 +106,11 @@ function onProfileChange(e) {
         </v-icon>
       </h2>
       <!-- IF RIDER, PASSENGER, OR ADMIN BA -->
-      <p class="text-body-3 text-medium-emphasis">Rider</p>
+      <p class="text-body-3 text-medium-emphasis">
+        {{ userData.is_driver === true ? 'Rider' : 'Passenger' }}
+      </p>
     </div>
+
     <br />
 
     <!-- DETAILS -->
@@ -123,11 +118,11 @@ function onProfileChange(e) {
       <v-row class="d-flex justify-center">
         <v-divider></v-divider>
         <v-col cols="12" sm="6" md="4">
-          <v-card elevation="5" class="card-details">
+          <v-card elevation="5" class="card-details" v-if="userData.is_driver">
             <div>
               <h2 class="ml-2">Details:</h2>
               <v-list-item>
-                <v-list-item-content>
+                <div>
                   <v-list-item-title>
                     Plate Number:
                     <div
@@ -160,12 +155,12 @@ function onProfileChange(e) {
                       @click="isPhoneNum = true"
                       style="display: inline-flex; align-items: center; cursor: pointer"
                     >
-                      <span>{{ phoneNumber }}</span>
+                      <span>{{ userData.phone_num }}</span>
                       <v-icon size="15" class="ml-2">mdi-pencil</v-icon>
                     </div>
                     <v-text-field
                       v-else
-                      v-model="phoneNumber"
+                      v-model="userData.phone_num"
                       variant="underlined"
                       size="15"
                       append-icon="mdi-check"
@@ -178,7 +173,7 @@ function onProfileChange(e) {
                     />
                   </v-list-item-title>
                   <v-divider class="pb-2"></v-divider>
-                </v-list-item-content>
+                </div>
               </v-list-item>
             </div>
             <div class="d-flex align-center justify-center">
@@ -197,6 +192,42 @@ function onProfileChange(e) {
                 half-increments
                 hover
               ></v-rating>
+            </div>
+          </v-card>
+
+          <v-card v-else>
+            <div>
+              <h2 class="ml-2">Details:</h2>
+              <v-list-item>
+                <div>
+                  <v-divider class="pb-2"></v-divider>
+                  <v-list-item-title
+                    >Phone Number:
+                    <div
+                      v-if="!isPhoneNum"
+                      @click="isPhoneNum = true"
+                      style="display: inline-flex; align-items: center; cursor: pointer"
+                    >
+                      <b>{{ userData.phone_num }}</b>
+                      <v-icon size="15" class="ml-2">mdi-pencil</v-icon>
+                    </div>
+                    <v-text-field
+                      v-else
+                      v-model="userData.phone_num"
+                      variant="underlined"
+                      size="15"
+                      append-icon="mdi-check"
+                      @click:append="isPhoneNum = false"
+                      style="display: inline-flex"
+                      class="ma-0 pa-0"
+                      hide-details
+                      single-line
+                      density="compact"
+                    />
+                  </v-list-item-title>
+                  <v-divider class="pb-2"></v-divider>
+                </div>
+              </v-list-item>
             </div>
           </v-card>
         </v-col>
