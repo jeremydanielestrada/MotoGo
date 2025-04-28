@@ -74,6 +74,7 @@ const router = createRouter({
       path: '/edit-profile',
       name: 'EditProfile',
       component: EditProfileView,
+      meta: { requiresAuth: true },
     },
   ],
 })
