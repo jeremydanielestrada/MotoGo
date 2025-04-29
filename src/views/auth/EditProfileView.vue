@@ -180,7 +180,7 @@ const fallbackImage = ref('/images/ava.png')
           :key="Date.now()"
         />
         <v-btn icon class="ma-1 button-cover" @click.stop="$refs.profileInput.click()">
-          <v-icon size="20">mdi-camera</v-icon>
+          <v-icon color="white" size="20">mdi-camera</v-icon>
         </v-btn>
         <input
           type="file"
@@ -347,7 +347,7 @@ const fallbackImage = ref('/images/ava.png')
   top: 150px;
   left: 50%;
   transform: translateX(-50%);
-  border: 4px solid #ba68c8;
+  border: 4px solid #6a1b9a;
   overflow: visible;
   cursor: pointer;
 }
@@ -361,7 +361,7 @@ const fallbackImage = ref('/images/ava.png')
   right: 0;
   bottom: 0;
   box-shadow: none;
-  background: #ba68c8;
+  background: #6a1b9a;
 }
 .close-btn {
   background: none;

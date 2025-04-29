@@ -447,7 +447,7 @@ const carouselHeight = computed(() => {
           <v-row justify="center">
             <v-col cols="12" md="4">
               <!-- <h3 class="text-white font-weight-bold">MotoGo</h3> -->
-              <img src="/images/motoGO.png" width="100px" />
+              <img src="/images/motoGO.png" width="90px" />
               <p class="text-white-darken-2 mt-2">
                 Your trusted ride-hailing service. Making transportation accessible, affordable, and
                 safe.
