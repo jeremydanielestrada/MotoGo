@@ -10,6 +10,9 @@ export const useMessageStore = defineStore('messages', () => {
   const activeSubscription = ref(null)
   const typingUsers = ref({})
   const unreadMessages = ref({})
+  const lastFetchTime = ref(null)
+  const retryCount = ref(0)
+  const maxRetries = 3
 
   // Get all messages for the current user
   async function fetchMessages() {
@@ -24,57 +27,167 @@ export const useMessageStore = defineStore('messages', () => {
       }
       const userId = userData.user.id
 
-      const { data, error: msgError } = await supabase
+      // Use the last fetch time to only get new messages if available
+      let query = supabase
         .from('messages')
         .select('*')
         .or(`rider_id.eq.${userId},passenger_id.eq.${userId}`)
+      
+      if (lastFetchTime.value) {
+        // Only fetch messages newer than the last fetch time
+        query = query.gt('created_at', lastFetchTime.value)
+      }
+
+      const { data, error: msgError } = await query
 
       if (msgError) {
         error.value = 'Failed to fetch messages'
         return
       }
 
-      // Only keep fields that exist in your schema
-      messages.value = (data || [])
-        .map((msg) => ({
+      // Update last fetch time
+      lastFetchTime.value = new Date().toISOString()
+
+      if (data && data.length > 0) {
+        // Merge new messages with existing ones, avoiding duplicates
+        const newMessages = data.map((msg) => ({
           ...msg,
           created_at: msg.created_at || new Date().toISOString(),
         }))
-        .sort((a, b) => new Date(b.created_at || new Date()) - new Date(a.created_at || new Date()))
+        
+        // Add new messages to the store
+        const existingIds = new Set(messages.value.map(msg => msg.id))
+        const uniqueNewMessages = newMessages.filter(msg => !existingIds.has(msg.id))
+        
+        messages.value = [...uniqueNewMessages, ...messages.value]
+          .sort((a, b) => new Date(b.created_at || new Date()) - new Date(a.created_at || new Date()))
+      }
 
+      // Set up real-time subscription
       setupMessageSubscription(userId)
     } catch (err) {
+      console.error('Error fetching messages:', err)
       error.value = 'Unexpected error occurred'
     } finally {
       isLoading.value = false
     }
   }
 
+  // Refresh messages - can be called manually to force a refresh
+  async function refreshMessages() {
+    // Reset lastFetchTime to get all messages
+    lastFetchTime.value = null
+    retryCount.value = 0
+    await fetchMessages()
+  }
+
   // Real-time subscription
   function setupMessageSubscription(userId) {
+    // Clean up any existing subscription first
     cleanup()
-    activeSubscription.value = supabase
-      .channel('messages-changes')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
-          const newMessage = {
-            ...payload.new,
-            created_at: payload.new.created_at || new Date().toISOString(),
+    
+    // Don't attempt to subscribe if we've exceeded retry attempts
+    if (retryCount.value >= maxRetries) {
+      console.warn(`Maximum retry attempts (${maxRetries}) reached. Stopping subscription attempts.`)
+      return
+    }
+    
+    try {
+      // Create a new subscription channel with a unique name to avoid conflicts
+      const channelName = `messages-changes-${userId}-${Date.now()}`
+      
+      // Create the channel
+      const channel = supabase.channel(channelName)
+      
+      // Set up the subscription
+      activeSubscription.value = channel
+        .on(
+          'postgres_changes',
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'messages',
+            filter: `rider_id=eq.${userId}` 
+          },
+          (payload) => {
+            handleNewMessage(payload, userId)
           }
-          if (!messages.value.some((msg) => msg.id === newMessage.id)) {
-            messages.value = [newMessage, ...messages.value]
+        )
+        .on(
+          'postgres_changes',
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'messages',
+            filter: `passenger_id=eq.${userId}` 
+          },
+          (payload) => {
+            handleNewMessage(payload, userId)
           }
-          const partnerId =
-            payload.new.rider_id === userId ? payload.new.passenger_id : payload.new.rider_id
-          if (partnerId !== userId) {
-            if (!unreadMessages.value[partnerId]) unreadMessages.value[partnerId] = []
-            unreadMessages.value[partnerId].push(payload.new.id)
+        )
+        .subscribe((status) => {
+          console.log(`Supabase subscription status: ${status}`)
+          if (status === 'SUBSCRIBED') {
+            // Reset retry count on successful subscription
+            retryCount.value = 0
+          } else if (status === 'CHANNEL_ERROR' || status === 'SUBSCRIPTION_ERROR') {
+            console.error('Failed to subscribe to real-time messages')
+            
+            // Increment retry count
+            retryCount.value++
+            
+            // Try to resubscribe after a delay if subscription fails
+            if (retryCount.value < maxRetries) {
+              console.log(`Retry attempt ${retryCount.value}/${maxRetries} for subscription...`)
+              setTimeout(() => {
+                // Clean up the failed subscription
+                if (activeSubscription.value) {
+                  supabase.removeChannel(activeSubscription.value)
+                  activeSubscription.value = null
+                }
+                
+                // Try to subscribe again
+                setupMessageSubscription(userId)
+              }, 3000 * retryCount.value) // Exponential backoff
+            } else {
+              console.warn(`Maximum retry attempts (${maxRetries}) reached. Please refresh manually.`)
+            }
           }
-        },
-      )
-      .subscribe()
+        })
+    } catch (err) {
+      console.error('Error setting up subscription:', err)
+      retryCount.value++
+    }
+  }
+
+  // Handle new message from subscription
+  function handleNewMessage(payload, userId) {
+    console.log('New message received:', payload.new)
+    
+    const newMessage = {
+      ...payload.new,
+      created_at: payload.new.created_at || new Date().toISOString(),
+    }
+    
+    // Check if message already exists to avoid duplicates
+    if (!messages.value.some((msg) => msg.id === newMessage.id)) {
+      console.log('Adding new message to store')
+      // Add to messages array and maintain sort order
+      messages.value = [newMessage, ...messages.value]
+        .sort((a, b) => new Date(b.created_at || new Date()) - new Date(a.created_at || new Date()))
+    } else {
+      console.log('Message already exists in store, skipping')
+    }
+    
+    // Determine partner ID for unread messages
+    const partnerId =
+      payload.new.rider_id === userId ? payload.new.passenger_id : payload.new.rider_id
+    
+    // Mark as unread if the message is from the partner
+    if (partnerId !== userId) {
+      if (!unreadMessages.value[partnerId]) unreadMessages.value[partnerId] = []
+      unreadMessages.value[partnerId].push(payload.new.id)
+    }
   }
 
   // Send a new message
@@ -97,12 +210,21 @@ export const useMessageStore = defineStore('messages', () => {
       if (data && data[0]) {
         const newMessage = {
           ...data[0],
-          created_at: new Date().toISOString(),
+          created_at: data[0].created_at || new Date().toISOString(),
         }
-        messages.value = [newMessage, ...messages.value]
+        
+        // Ensure the message is added to the local state immediately
+        if (!messages.value.some((msg) => msg.id === newMessage.id)) {
+          messages.value = [newMessage, ...messages.value]
+            .sort((a, b) => new Date(b.created_at || new Date()) - new Date(a.created_at || new Date()))
+        }
+        
+        return { data: newMessage }
       }
-      return { data }
+
+      return { data: null }
     } catch (err) {
+      console.error('Error sending message:', err)
       return { error: 'Unexpected error occurred' }
     }
   }
@@ -110,27 +232,36 @@ export const useMessageStore = defineStore('messages', () => {
   // Mark a message as read (UI only)
   function markMessageAsRead(messageId) {
     Object.keys(unreadMessages.value).forEach((partnerId) => {
-      const idx = unreadMessages.value[partnerId].indexOf(messageId)
-      if (idx !== -1) unreadMessages.value[partnerId].splice(idx, 1)
+      unreadMessages.value[partnerId] = unreadMessages.value[partnerId].filter(
+        (id) => id !== messageId,
+      )
     })
   }
 
   // Set typing indicator (UI only)
   function setTypingIndicator(partnerId, isTyping) {
+    if (!partnerId) return
+
     if (isTyping) {
-      typingUsers.value[partnerId] = true
-      setTimeout(() => {
-        delete typingUsers.value[partnerId]
-      }, 3000)
+      typingUsers.value = { ...typingUsers.value, [partnerId]: true }
     } else {
-      delete typingUsers.value[partnerId]
+      const newTypingUsers = { ...typingUsers.value }
+      delete newTypingUsers[partnerId]
+      typingUsers.value = newTypingUsers
     }
   }
 
   // Clean up subscriptions
   function cleanup() {
-    if (activeSubscription.value) {
-      supabase.channel(activeSubscription.value.topic || 'messages-changes').unsubscribe()
+    try {
+      if (activeSubscription.value) {
+        console.log('Cleaning up subscription')
+        supabase.removeChannel(activeSubscription.value)
+        activeSubscription.value = null
+      }
+    } catch (err) {
+      console.error('Error cleaning up subscription:', err)
+      // Reset the subscription reference even if removal fails
       activeSubscription.value = null
     }
   }
@@ -142,9 +273,10 @@ export const useMessageStore = defineStore('messages', () => {
     typingUsers,
     unreadMessages,
     fetchMessages,
+    refreshMessages,
     sendMessage,
-    setTypingIndicator,
     markMessageAsRead,
+    setTypingIndicator,
     cleanup,
   }
 })

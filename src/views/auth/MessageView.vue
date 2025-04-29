@@ -7,6 +7,9 @@ import { useMessageStore } from '@/stores/messages'
 import { useRoute } from 'vue-router'
 import { useAuthUserStore } from '@/stores/authUser'
 
+// Add emit declaration at the top of script
+const emit = defineEmits(['toggle-navigation'])
+
 const { mobile } = useDisplay()
 const messageStore = useMessageStore()
 const authStore = useAuthUserStore()
@@ -14,7 +17,6 @@ const route = useRoute()
 
 const message = ref('')
 const currentChatPartner = ref(null)
-const drawer = ref(false)
 
 // Get current user ID, fallback to Supabase if not present in authStore
 import { supabase } from '@/utils/supabase'
@@ -145,7 +147,7 @@ async function sendMessage() {
 }
 
 function handleToggleNavigation(state) {
-  drawer.value = state
+  emit('toggle-navigation', state)
 }
 
 // Format timestamp for display
@@ -178,8 +180,10 @@ function selectChatPartner(partner) {
   }
   currentChatPartner.value = partner
   console.log('DEBUG: Selected partner:', partner)
+
+  // Emit event to close drawer on mobile only
   if (mobile.value) {
-    drawer.value = false
+    emit('toggle-navigation', false)
   }
 
   // Mark messages as read in the UI (since we don't have a database field for this)
@@ -237,6 +241,27 @@ watch(
   { immediate: true },
 )
 
+// Watch for new messages in the store to update the UI in real-time
+watch(
+  () => messageStore.messages,
+  () => {
+    // This will trigger reactivity in chatList and currentMessages computed properties
+    // No need to do anything else as Vue will automatically update the UI
+    console.log('Messages updated in store, refreshing UI')
+  },
+  { deep: true } // Deep watch to detect changes in the array items
+)
+
+// Function to manually refresh messages
+async function refreshMessages() {
+  console.log('Manually refreshing messages')
+  if (messageStore.refreshMessages) {
+    await messageStore.refreshMessages()
+  } else {
+    await messageStore.fetchMessages()
+  }
+}
+
 onUnmounted(() => {
   // Clean up real-time subscription when leaving the view
   messageStore.cleanup()
@@ -245,157 +270,155 @@ onUnmounted(() => {
 
 <template>
   <MessageLayout @toggle-navigation="handleToggleNavigation">
-    <template #content>
-      <div class="chat-layout">
-        <!-- TOP HEADER -->
-        <div class="app-header">
-          <router-link to="/system/passenger-dashboard" class="back-link">
-            <v-icon>mdi-arrow-left</v-icon> BACK TO DASHBOARD
-          </router-link>
-          <div class="page-title">Messages</div>
-        </div>
+    <!-- Chat list for drawer -->
+    <template #drawer-content>
+      <v-list class="messenger-chat-list pa-0">
+        <v-list-item class="d-flex justify-space-between pa-4 messenger-header">
+          <h2 class="text-h6 font-weight-bold">Chats</h2>
+          <v-btn icon variant="text" @click="refreshMessages" :loading="messageStore.isLoading">
+            <v-icon>mdi-refresh</v-icon>
+          </v-btn>
+        </v-list-item>
 
-        <div class="main-container">
-          <!-- SIDEBAR -->
-          <div class="sidebar-container" v-if="mobile ? drawer : true">
-            <div class="sidebar-header">
-              <div class="d-flex align-center">
-                <h2 class="text-h6 font-weight-medium">Chats</h2>
+        <v-divider></v-divider>
+
+        <div v-if="chatList.length === 0" class="pa-4 text-center">No conversations yet</div>
+
+        <v-list-item
+          v-for="(chat, index) in chatList"
+          :key="index"
+          class="messenger-chat-item py-3 px-2"
+          @click="selectChatPartner(chat)"
+          :class="{
+            'messenger-active-chat': currentChatPartner && currentChatPartner.id === chat.id,
+          }"
+        >
+          <div class="d-flex align-center w-100">
+            <v-avatar size="40" class="mr-3">
+              <v-img src="/images/ava.png" alt="Avatar" />
+            </v-avatar>
+            <div class="messenger-chat-info flex-grow-1">
+              <div class="d-flex justify-space-between align-center">
+                <div class="messenger-chat-name font-weight-medium">
+                  {{ chat.id === currentUserId ? 'Me' : 'Partner' }}
+                </div>
+                <div class="messenger-time text-caption">
+                  {{ formatTime(chat.timestamp) }}
+                </div>
               </div>
-            </div>
-
-            <div v-if="messageStore.isLoading" class="pa-4 text-center">
-              <v-progress-circular indeterminate color="primary"></v-progress-circular>
-            </div>
-
-            <div v-else-if="chatList.length === 0" class="pa-4 text-center">
-              <p>No conversations yet</p>
-            </div>
-
-            <div
-              v-for="chat in chatList"
-              :key="chat.id"
-              class="chat-list-item"
-              :class="{ 'selected-chat': currentChatPartner && currentChatPartner.id === chat.id }"
-              @click="selectChatPartner(chat)"
-            >
-              <div class="chat-avatar">
-                <img :src="chat.ava" alt="Avatar" class="avatar-img" />
-              </div>
-              <div class="chat-info">
-                <div class="chat-name">{{ chat.id === currentUserId ? 'Me' : 'Partner' }}</div>
-                <div class="chat-preview">{{ chat.lastMessage }}</div>
+              <div class="messenger-preview text-caption text-truncate">
+                {{ chat.lastMessage || '\u00A0' }}
               </div>
             </div>
           </div>
-        </div>
+        </v-list-item>
+      </v-list>
+    </template>
 
-        <!-- Mobile Navigation Drawer -->
-        <v-navigation-drawer v-if="mobile" v-model="drawer" :location="'left'" :width="300">
-          <v-list>
-            <v-list-item class="d-flex justify-space-between pa-4">
-              <h2 class="text-h6">Chats</h2>
-              <v-btn icon @click="drawer = false">
-                <v-icon>mdi-close</v-icon>
-              </v-btn>
-            </v-list-item>
-
-            <v-divider></v-divider>
-
-            <div v-if="chatList.length === 0" class="pa-4 text-center">No conversations yet</div>
-
-            <v-list-item
-              v-for="(chat, index) in chatList"
-              :key="index"
-              class="chat-list-item-mobile"
-              @click="selectChatPartner(chat)"
-              :class="{
-                'bg-purple-lighten-5': currentChatPartner && currentChatPartner.id === chat.id,
-              }"
-            >
-              <div class="d-flex align-center w-100">
-                <div class="chat-avatar">
-                  <img src="/images/ava.png" alt="Avatar" class="avatar-img" />
-                </div>
-                <div class="chat-info">
-                  <div class="chat-name">
-                    {{ chat.id === currentUserId ? 'Me' : 'Partner' }}
-                  </div>
-                  <div class="chat-preview">{{ chat.lastMessage || '\u00A0' }}</div>
-                </div>
-              </div>
-            </v-list-item>
-          </v-list>
-        </v-navigation-drawer>
-
+    <template #content>
+      <div class="messenger-layout">
         <!-- CHAT AREA -->
-        <div class="chat-content">
+        <div class="messenger-content">
           <template v-if="currentChatPartner">
             <!-- CHAT HEADER -->
-            <div class="chat-header">
-              <div class="d-flex align-center">
-                <v-btn v-if="mobile" icon class="mr-2" @click="drawer = true">
-                  <v-icon>mdi-menu</v-icon>
-                </v-btn>
-                <img src="/images/ava.png" alt="Avatar" class="chat-header-avatar" />
-                <div class="chat-header-info">
-                  <div class="chat-header-name">
-                    {{ currentChatPartner.id === currentUserId ? 'Me' : 'Partner' }}
+            <div class="messenger-chat-header">
+              <div class="d-flex align-center justify-space-between w-100">
+                <div class="d-flex align-center">
+                  <v-avatar size="40" class="mr-3">
+                    <v-img src="/images/ava.png" alt="Avatar" />
+                  </v-avatar>
+                  <div>
+                    <div class="font-weight-medium">
+                      {{ currentChatPartner.id === currentUserId ? 'Me' : 'Partner' }}
+                    </div>
+                    <div class="text-caption text-grey">
+                      {{
+                        messageStore.typingUsers && messageStore.typingUsers[currentChatPartner.id]
+                          ? 'Typing...'
+                          : 'Online'
+                      }}
+                    </div>
                   </div>
                 </div>
+                <v-btn icon variant="text" @click="refreshMessages" :loading="messageStore.isLoading">
+                  <v-icon>mdi-refresh</v-icon>
+                </v-btn>
               </div>
             </div>
 
             <!-- MESSAGE DISPLAY AREA -->
-            <div class="messages-container">
-              <div v-if="!currentMessages.length" class="no-messages">
-                No messages yet. Send a message to start the conversation!
+            <div class="messenger-messages-container">
+              <div v-if="!currentMessages.length" class="messenger-no-messages">
+                <v-icon size="64" color="grey-lighten-2" class="mb-4"
+                  >mdi-message-text-outline</v-icon
+                >
+                <div>No messages yet. Send a message to start the conversation!</div>
               </div>
 
-              <div
-                v-for="(msg, index) in currentMessages"
-                :key="index"
-                :class="[
-                  'message-bubble',
-                  msg.from === 'me' ? 'message-outgoing' : 'message-incoming',
-                ]"
-                @click="markMessageAsRead(msg.id)"
-              >
-                {{ msg.text }}
-                <div class="message-timestamp">
-                  {{ formatTime(msg.timestamp) }}
+              <div v-else class="messenger-messages-list">
+                <div
+                  v-for="(msg, index) in currentMessages"
+                  :key="index"
+                  class="messenger-message-wrapper"
+                  :class="[msg.from === 'me' ? 'messenger-outgoing' : 'messenger-incoming']"
+                  @click="markMessageAsRead(msg.id)"
+                >
+                  <div class="messenger-bubble">
+                    {{ msg.text }}
+                  </div>
+                  <div class="messenger-timestamp text-caption">
+                    {{ formatTime(msg.timestamp) }}
+                  </div>
                 </div>
-              </div>
 
-              <!-- Typing indicator for the current chat partner -->
-              <div
-                v-if="messageStore.typingUsers && messageStore.typingUsers[currentChatPartner.id]"
-                class="message-bubble message-incoming typing-container"
-              >
-                <div class="typing-dots">
-                  <span></span>
-                  <span></span>
-                  <span></span>
+                <!-- Typing indicator for the current chat partner -->
+                <div
+                  v-if="messageStore.typingUsers && messageStore.typingUsers[currentChatPartner.id]"
+                  class="messenger-message-wrapper messenger-incoming"
+                >
+                  <div class="messenger-bubble messenger-typing">
+                    <div class="typing-dots">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- INPUT FIELD -->
-            <div class="message-input-container">
+            <div class="messenger-input-container">
               <v-textarea
                 v-model="message"
                 :rows="1"
                 auto-grow
+                hide-details
+                variant="outlined"
+                density="comfortable"
                 placeholder="Type a message..."
+                class="messenger-input"
                 @keydown="handleTyping"
                 @keyup.enter.prevent="sendMessage"
               ></v-textarea>
-              <v-btn color="primary" :disabled="!message.trim()" @click="sendMessage"> Send </v-btn>
+              <v-btn
+                color="primary"
+                icon
+                class="messenger-send-btn"
+                :disabled="!message.trim()"
+                @click="sendMessage"
+              >
+                <v-icon>mdi-send</v-icon>
+              </v-btn>
             </div>
           </template>
           <template v-else>
-            <div class="empty-state">
-              <div class="empty-text">Select a conversation to start chatting</div>
+            <div class="messenger-empty-state">
+              <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-chat-outline</v-icon>
+              <div class="text-h6 font-weight-medium mb-2">Your Messages</div>
+              <div class="text-body-2 text-center px-4">
+                Select a conversation from the list or start a new one
+              </div>
             </div>
           </template>
         </div>
@@ -405,227 +428,163 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Overall Layout */
-.chat-layout {
+/* Facebook Messenger Style Layout */
+.messenger-layout {
   display: flex;
   flex-direction: column;
   height: 100vh;
   width: 100%;
-  position: fixed;
-  top: 0;
-  left: 0;
+  background-color: #f0f2f5;
 }
 
-.app-header {
-  background-color: #7c3aed;
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  height: 60px;
-}
-
-.back-link {
-  display: flex;
-  align-items: center;
-  color: white;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.page-title {
-  font-size: 18px;
-  font-weight: 500;
-}
-
-.main-container {
-  display: flex;
-  height: calc(100vh - 60px);
-  overflow: hidden;
-}
-
-/* Sidebar Styles */
-.sidebar-container {
-  width: 320px;
+/* Chat List Styling */
+.messenger-chat-list {
   background-color: white;
-  border-right: 1px solid #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
 }
 
-.sidebar-header {
-  padding: 15px;
-  border-bottom: 1px solid #e0e0e0;
+.messenger-header {
+  border-bottom: 1px solid #e4e6eb;
 }
 
-.chat-list-item {
-  display: flex;
-  padding: 15px;
-  cursor: pointer;
-  border-bottom: 1px solid #f5f5f5;
+.messenger-chat-item {
+  border-radius: 8px;
+  margin: 0 4px;
   transition: background-color 0.2s;
 }
 
-.chat-list-item:hover {
-  background-color: #f9f9f9;
+.messenger-chat-item:hover {
+  background-color: #f2f2f2;
 }
 
-.chat-list-item.selected-chat {
-  background-color: #f0e6ff;
+.messenger-active-chat {
+  background-color: #e7f3ff !important;
 }
 
-.chat-list-item-mobile {
-  padding: 10px 15px;
-  cursor: pointer;
+.messenger-chat-name {
+  font-size: 15px;
+  color: #050505;
 }
 
-.chat-avatar {
-  margin-right: 15px;
+.messenger-preview {
+  color: #65676b;
+  max-width: 160px;
 }
 
-.avatar-img {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
+.messenger-time {
+  color: #65676b;
+  font-size: 12px;
 }
 
-.chat-info {
-  flex: 1;
-  overflow: hidden;
-}
-
-.chat-name {
-  font-weight: 500;
-  margin-bottom: 3px;
-}
-
-.chat-preview {
-  color: #757575;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Chat Content Styles */
-.chat-content {
-  flex: 1;
+/* Chat Content Area */
+.messenger-content {
   display: flex;
   flex-direction: column;
-  background-color: #f5f5f5;
+  height: 100%;
   overflow: hidden;
 }
 
-.chat-header {
-  background-color: #7c3aed;
-  color: white;
-  padding: 10px 20px;
-  display: flex;
-  align-items: center;
+.messenger-chat-header {
+  padding: 12px 16px;
+  background-color: white;
+  border-bottom: 1px solid #e4e6eb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  z-index: 1;
 }
 
-.chat-header-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  margin-right: 10px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-}
-
-.chat-header-name {
-  font-weight: 500;
-  font-size: 16px;
-}
-
-.messages-container {
+.messenger-messages-container {
   flex: 1;
+  padding: 16px;
   overflow-y: auto;
-  padding: 20px;
-}
-
-.no-messages {
-  text-align: center;
-  color: #757575;
-  margin-top: 40px;
-}
-
-.message-bubble {
-  max-width: 80%;
-  padding: 10px 15px;
-  border-radius: 18px;
-  margin-bottom: 8px;
-  position: relative;
-}
-
-.message-incoming {
-  background-color: white;
-  color: #333;
-  align-self: flex-start;
-  margin-right: auto;
-  border-bottom-left-radius: 5px;
-}
-
-.message-outgoing {
-  background-color: #7c3aed;
-  color: white;
-  align-self: flex-end;
-  margin-left: auto;
-  border-bottom-right-radius: 5px;
-}
-
-.message-timestamp {
-  font-size: 11px;
-  margin-top: 3px;
-  opacity: 0.8;
-  text-align: right;
-}
-
-.message-input-container {
-  padding: 15px;
-  background-color: white;
-  border-top: 1px solid #e0e0e0;
-}
-
-.message-input {
-  width: 100%;
-}
-
-.empty-state {
   display: flex;
+  flex-direction: column-reverse;
+  background-color: #f0f2f5;
+}
+
+.messenger-no-messages {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
+  color: #65676b;
+  text-align: center;
+  padding: 20px;
 }
 
-.empty-text {
-  color: #757575;
-  font-size: 16px;
+.messenger-messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* Typing indicators */
-.typing-container {
-  max-width: 70px;
-  padding: 10px;
+.messenger-message-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 70%;
+  margin-bottom: 8px;
+}
+
+.messenger-incoming {
+  align-self: flex-start;
+}
+
+.messenger-outgoing {
+  align-self: flex-end;
+}
+
+.messenger-bubble {
+  padding: 8px 12px;
+  border-radius: 18px;
+  word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.messenger-incoming .messenger-bubble {
+  background-color: white;
+  color: #050505;
+  border-top-left-radius: 4px;
+}
+
+.messenger-outgoing .messenger-bubble {
+  background-color: #0084ff;
+  color: white;
+  border-top-right-radius: 4px;
+}
+
+.messenger-timestamp {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #65676b;
+  align-self: flex-end;
+}
+
+.messenger-incoming .messenger-timestamp {
+  align-self: flex-start;
+  margin-left: 4px;
+}
+
+.messenger-outgoing .messenger-timestamp {
+  align-self: flex-end;
+  margin-right: 4px;
+}
+
+.messenger-typing {
+  padding: 10px 12px;
 }
 
 .typing-dots {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
 }
 
 .typing-dots span {
-  height: 8px;
   width: 8px;
-  margin: 0 2px;
-  background-color: #9e9e9e;
+  height: 8px;
   border-radius: 50%;
-  display: inline-block;
-  animation: typing 1.4s infinite ease-in-out both;
+  background-color: #bcc0c4;
+  animation: typingAnimation 1.4s infinite ease-in-out;
 }
 
 .typing-dots span:nth-child(1) {
@@ -640,16 +599,54 @@ onUnmounted(() => {
   animation-delay: 0.4s;
 }
 
-@keyframes typing {
+@keyframes typingAnimation {
   0%,
-  80%,
+  60%,
   100% {
-    transform: scale(0.6);
+    transform: translateY(0);
     opacity: 0.6;
   }
-  40% {
-    transform: scale(1);
+  30% {
+    transform: translateY(-4px);
     opacity: 1;
+  }
+}
+
+.messenger-input-container {
+  display: flex;
+  align-items: flex-end;
+  padding: 12px 16px;
+  background-color: white;
+  border-top: 1px solid #e4e6eb;
+}
+
+.messenger-input {
+  flex: 1;
+  border-radius: 20px;
+  font-size: 15px;
+  max-height: 120px;
+}
+
+.messenger-send-btn {
+  margin-left: 8px;
+}
+
+.messenger-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #65676b;
+  text-align: center;
+  padding: 20px;
+  background-color: #f0f2f5;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 600px) {
+  .messenger-message-wrapper {
+    max-width: 85%;
   }
 }
 </style>

@@ -965,12 +965,12 @@ const carouselHeight = computed(() => {
                   <template v-slot:prepend>
                     <v-avatar color="primary" size="large">
                       <span class="text-h5 text-white">
-                        {{ bookingStore.activeBooking?.driver_name?.charAt(0) || 'D' }}
+                        {{ bookingStore.activeBooking?.rider_id?.charAt(0) || 'D' }}
                       </span>
                     </v-avatar>
                   </template>
                   <v-card-title>{{
-                    bookingStore.activeBooking?.driver_name || 'Your Driver'
+                    bookingStore.activeBooking?.rider_id || 'Your Driver'
                   }}</v-card-title>
                   <v-card-subtitle> Arriving in approximately 5-10 minutes </v-card-subtitle>
                 </v-card-item>

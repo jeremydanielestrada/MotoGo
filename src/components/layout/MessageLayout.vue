@@ -1,16 +1,17 @@
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useDisplay } from 'vuetify'
 import { supabase } from '@/utils/supabase'
 import { useAuthUserStore } from '@/stores/authUser'
-const { mdAndUp, smAndDown } = useDisplay()
+
 const drawer = ref(false)
 const userRole = ref(null)
 const authUserStore = useAuthUserStore()
 
-function toggleDrawer() {
-  drawer.value = !drawer.value
-}
+const { mobile } = useDisplay()
+
+// Define emit for the toggle-navigation event
+const emit = defineEmits(['toggle-navigation'])
 
 // Check if user is a driver directly from Supabase
 async function checkUserRole() {
@@ -37,43 +38,33 @@ const dashboardPath = computed(() => {
 
 // Combine the onMounted hooks
 onMounted(async () => {
-  if (mdAndUp.value) {
-    drawer.value = false // Always start with drawer closed
-  }
-
   // Get user role directly from Supabase
   await checkUserRole()
 })
 
-watch(
-  mdAndUp,
-  (isDesktop) => {
-    if (isDesktop) drawer.value = false // Always close drawer on desktop
-  },
-  { immediate: true },
-)
+// Watch for drawer changes and emit events
+watch(drawer, (newValue) => {
+  emit('toggle-navigation', newValue)
+})
 
+// Improved drawer management
 function handleToggleNavigation(state) {
   drawer.value = state
 }
 </script>
 
 <template>
-  <v-app>
+  <v-layout>
     <v-app-bar color="purple-darken-3">
-      <template v-slot:append>
-        <v-icon v-show="smAndDown" @click="toggleDrawer" class="me-4" size="30"
-          >mdi-message-outline</v-icon
-        >
-      </template>
+      <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
 
       <!-- Use the computed dashboardPath -->
-      <v-btn :to="dashboardPath" v-if="mdAndUp">
+      <v-btn :to="dashboardPath" v-if="$vuetify.display.mdAndUp">
         <v-icon> mdi-keyboard-backspace </v-icon>
         Back to Dashboard
       </v-btn>
 
-      <v-btn :to="dashboardPath" v-if="!mdAndUp">
+      <v-btn :to="dashboardPath" v-if="!$vuetify.display.mdAndUp">
         <v-icon class="ms-4" size="30">mdi-keyboard-backspace</v-icon>
       </v-btn>
 
@@ -81,10 +72,18 @@ function handleToggleNavigation(state) {
       <h1 class="text-h6 font-weight-bold me-5">Messages</h1>
     </v-app-bar>
 
+    <v-navigation-drawer
+      v-model="drawer"
+      :location="$vuetify.display.mobile ? 'start' : undefined"
+      temporary
+    >
+      <slot name="drawer-content"></slot>
+    </v-navigation-drawer>
+
     <v-main>
-      <slot name="content" :drawer="drawer" :onToggleNavigation="handleToggleNavigation"> </slot>
+      <slot name="content" :drawer="drawer" :onToggleNavigation="handleToggleNavigation" />
     </v-main>
-  </v-app>
+  </v-layout>
 </template>
 
 <style>

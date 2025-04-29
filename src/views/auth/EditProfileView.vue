@@ -105,8 +105,6 @@ const onFileChange = async (event) => {
 // }
 
 
-
-
 const getuser = async () => {
   loadingUser.value = true
   const userMetaData = await getuserInformation()
@@ -131,20 +129,9 @@ const getuser = async () => {
   
   loadingUser.value = false
 }
-
-
-
-
-
-
 onMounted(() => {
   getuser()
 })
-
-
-
-
-
 
 // EDIT FOR DETAILS
 const plateNumber = ref(localStorage.getItem('plateNumber') || '')
@@ -171,13 +158,15 @@ const fallbackImage = ref('/images/ava.png')
 <template>
   <!-- PROFILE PAGE -->
   <v-card class="profile-card rounded-0" flat>
+    
     <!-- Cover Photo -->
     <v-card>
       <div class="background-pic" elevation="5">
         <v-img src="coverPhoto" height="200px" class="bg-purple-lighten-4">
-          <router-link to="/system/passenger-dashboard">
-            <v-icon size="30" class="ml-4 mt-2">mdi-keyboard-backspace</v-icon>
-          </router-link>
+          <v-btn to="/system/passenger-dashboard" text class="ma-2 ">
+            <v-icon>mdi-keyboard-backspace</v-icon>
+            back
+          </v-btn>
           <input
             type="file"
             ref="coverInput"

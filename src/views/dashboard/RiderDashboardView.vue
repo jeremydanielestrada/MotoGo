@@ -203,6 +203,9 @@ const fetchLocationById = async (locationId) => {
 // Fetch existing ride requests
 const fetchExistingRequests = async () => {
   try {
+    // Reset the new requests flag when manually refreshing
+    hasNewRequests.value = false
+
     // Get all bookings since the status column doesn't exist
     const { data, error } = await supabase.from('bookings').select('*')
 
@@ -344,6 +347,13 @@ const fetchExistingRequests = async () => {
   } catch (err) {
     console.error('Unexpected error fetching ride requests:', err)
   }
+}
+
+// Manual refresh function
+const manualRefresh = async () => {
+  displayAlert('Refreshing bookings...', 'info', 1000)
+  await fetchExistingRequests()
+  displayAlert('Bookings refreshed successfully', 'success')
 }
 
 // Subscribe to ride requests in real-time
@@ -704,9 +714,14 @@ onUnmounted(() => {
   <RiderDashboardLayout>
     <!-- Ride Request -->
     <template #drawer>
-      <h5 class="text-h6 text-center py-2">
-        Ride Requests
-        <v-badge v-if="hasNewRequests" color="red" content="new" inline></v-badge>
+      <h5 class="text-h6 py-2 d-flex align-center">
+        <span class="flex-grow-1 text-center"
+          >Ride Requests
+          <v-badge v-if="hasNewRequests" color="red" content="new" inline></v-badge>
+        </span>
+        <v-btn icon size="small" class="mr-2" title="Refresh bookings" @click="manualRefresh">
+          <v-icon>mdi-refresh</v-icon>
+        </v-btn>
       </h5>
       <v-divider></v-divider>
 
@@ -928,12 +943,12 @@ onUnmounted(() => {
   </RiderDashboardLayout>
 
   <!-- Success/Error Alert -->
-  <v-snackbar v-model="showAlert" :color="alertType" :timeout="3000" location="top">
+  <!-- <v-snackbar v-model="showAlert" :color="alertType" :timeout="3000" location="top">
     {{ alertMessage }}
     <template v-slot:actions>
       <v-btn variant="text" @click="showAlert = false"> Close </v-btn>
     </template>
-  </v-snackbar>
+  </v-snackbar> -->
 </template>
 
 <style scoped>
