@@ -243,14 +243,14 @@ export const useBookingStore = defineStore('bookings', () => {
 
   // Enable messaging with the driver
   async function enableMessagingWithDriver(booking) {
-    if (!booking.driver_id) return
+    if (!booking.rider_id) return
 
     const messageStore = useMessageStore()
 
     // Create a messaging channel between passenger and driver
     await messageStore.createRideMessageChannel({
       booking_reference: booking.booking_reference,
-      rider_id: booking.driver_id,
+      rider_id: booking.rider_id,
       passenger_id: booking.passenger_id,
       id: booking.id,
     })

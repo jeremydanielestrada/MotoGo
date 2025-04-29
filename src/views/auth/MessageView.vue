@@ -1,9 +1,9 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import MessageLayout from '@/components/layout/MessageLayout.vue'
 import avatarImage from '/images/ava.png'
 import { useDisplay } from 'vuetify'
-import { useMessageStore } from '@/stores/message'
+import { useMessageStore } from '@/stores/messages'
 import { useRoute } from 'vue-router'
 import { useAuthUserStore } from '@/stores/authUser'
 
@@ -13,44 +13,49 @@ const authStore = useAuthUserStore()
 const route = useRoute()
 
 const message = ref('')
-const messages = ref([])
 const currentChatPartner = ref(null)
-const iconIndex = ref(0)
-const hideDisplay = ref(false)
 const drawer = ref(false)
 
-// Get current user ID
-const currentUserId = computed(() => authStore.userData?.id)
+// Get current user ID, fallback to Supabase if not present in authStore
+import { supabase } from '@/utils/supabase'
+const currentUserId = computed(() => {
+  if (authStore.userData?.id) return authStore.userData.id
+  // Fallback: try to get from Supabase session
+  try {
+    const session = supabase.auth.session && supabase.auth.session()
+    return session?.user?.id || null
+  } catch (err) {
+    console.warn('Could not get user ID from Supabase:', err)
+    return null
+  }
+})
 
-// Get all chats (grouped conversations)
+// Define chatList computed property
 const chatList = computed(() => {
-  // Group messages by conversation partner
   const chats = {}
-
   if (messageStore.messages.length) {
     messageStore.messages.forEach((msg) => {
       // Determine who the other person in the conversation is
       const partnerId = msg.rider_id === currentUserId.value ? msg.passenger_id : msg.rider_id
-      const isRider = msg.rider_id !== currentUserId.value
+      // Do not add self as chat partner
+      if (!partnerId || partnerId === currentUserId.value) {
+        return
+      }
 
-      // Get the partner's name and image
-      const partnerName = isRider ? msg.rider_name : msg.passenger_name
+      // Get the partner's name and image (default values)
 
-      // Determine the profile image - use actual image URL if available, fallback to default
-      const profileImage = isRider
-        ? msg.rider_image_url || avatarImage
-        : msg.passenger_image_url || avatarImage
-
+      // Create or update chat entry
       if (!chats[partnerId]) {
         chats[partnerId] = {
           id: partnerId,
-          name: partnerName || (isRider ? 'Rider' : 'Passenger'),
           lastMessage: msg.content,
-          ava: profileImage,
-          timestamp: msg.created_at,
+          timestamp: msg.created_at || new Date().toISOString(),
         }
-      } else if (new Date(msg.created_at) > new Date(chats[partnerId].timestamp)) {
-        // Update last message if this one is newer
+      } else if (
+        msg.created_at &&
+        new Date(msg.created_at) > new Date(chats[partnerId].timestamp)
+      ) {
+        // Update last message if this one is newer (assuming created_at exists)
         chats[partnerId].lastMessage = msg.content
         chats[partnerId].timestamp = msg.created_at
       }
@@ -58,28 +63,71 @@ const chatList = computed(() => {
   }
 
   // Convert to array and sort by newest message
-  return Object.values(chats).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+  return Object.values(chats).sort((a, b) => {
+    const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0)
+    const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0)
+    return dateB - dateA
+  })
 })
 
-// Get messages for the current conversation
 const currentMessages = computed(() => {
   if (!currentChatPartner.value) return []
 
   return messageStore.messages
     .filter(
       (msg) =>
-        (msg.rider_id === currentUserId.value &&
-          msg.passenger_id === currentChatPartner.value.id) ||
-        (msg.passenger_id === currentUserId.value && msg.rider_id === currentChatPartner.value.id),
+        (msg.rider_id == currentUserId.value && msg.passenger_id == currentChatPartner.value.id) ||
+        (msg.passenger_id == currentUserId.value && msg.rider_id == currentChatPartner.value.id),
     )
-    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    .sort((a, b) => {
+      // Handle missing created_at fields
+      const dateA = a.created_at ? new Date(a.created_at) : new Date(0)
+      const dateB = b.created_at ? new Date(b.created_at) : new Date(0)
+      return dateB - dateA
+    })
     .map((msg) => ({
+      ...msg,
       text: msg.content,
-      from: msg.rider_id === currentUserId.value ? 'me' : 'them',
-      timestamp: msg.created_at,
-      ava: avatarImage,
+      from: msg.rider_id == currentUserId.value ? 'me' : 'them',
+      timestamp: msg.created_at || new Date().toISOString(),
     }))
 })
+
+// Function to start a new chat
+async function newChat(userId) {
+  if (!userId) return
+
+  // Create a new chat partner
+  const partner = {
+    id: userId,
+    timestamp: new Date().toISOString(),
+  }
+
+  // Set as current chat partner
+  selectChatPartner(partner)
+
+  // Send a welcome message
+  await sendMessage({
+    content: 'Hi! Starting a new conversation.',
+    passenger_id: userId,
+  })
+}
+
+watch(
+  [() => route.params.id, chatList],
+  async ([chatId, chats]) => {
+    if (chatId) {
+      let partner = chats.find((chat) => chat.id == chatId)
+      if (!partner) {
+        // If no existing chat, create a new one
+        await newChat(chatId)
+      } else {
+        selectChatPartner(partner)
+      }
+    }
+  },
+  { immediate: true },
+)
 
 // Send a message
 async function sendMessage() {
@@ -91,17 +139,9 @@ async function sendMessage() {
   })
 
   message.value = ''
-  
+
   // Clear typing indicator
   messageStore.setTypingIndicator(currentChatPartner.value.id, false)
-}
-
-function clearMessage() {
-  message.value = ''
-}
-
-function resetIcon() {
-  iconIndex.value = 0
 }
 
 function handleToggleNavigation(state) {
@@ -111,43 +151,50 @@ function handleToggleNavigation(state) {
 // Format timestamp for display
 function formatTime(timestamp) {
   if (!timestamp) return ''
-  
+
   const date = new Date(timestamp)
   const now = new Date()
-  
+
   // If the message is from today, show only the time
   if (date.toDateString() === now.toDateString()) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
-  
+
   // If the message is from this week, show the day name
   const daysDiff = Math.floor((now - date) / (1000 * 60 * 60 * 24))
   if (daysDiff < 7) {
     return date.toLocaleDateString([], { weekday: 'short' })
   }
-  
+
   // Otherwise show the date
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' })
 }
 
 // Select a chat partner
 function selectChatPartner(partner) {
+  if (!partner) {
+    console.warn('No chat partner provided to selectChatPartner')
+    return
+  }
   currentChatPartner.value = partner
+  console.log('DEBUG: Selected partner:', partner)
   if (mobile.value) {
     drawer.value = false
   }
-  
-  // Mark messages from this partner as read
-  if (messageStore.unreadMessages[partner.id]) {
-    messageStore.unreadMessages[partner.id].forEach(messageId => {
-      messageStore.markMessageAsRead(messageId)
+
+  // Mark messages as read in the UI (since we don't have a database field for this)
+  if (messageStore.unreadMessages && messageStore.unreadMessages[partner.id]) {
+    messageStore.unreadMessages[partner.id].forEach((messageId) => {
+      if (typeof messageStore.markMessageAsRead === 'function') {
+        messageStore.markMessageAsRead(messageId)
+      }
     })
   }
 }
 
 // Mark a message as read
 function markMessageAsRead(messageId) {
-  if (messageId) {
+  if (messageId && typeof messageStore.markMessageAsRead === 'function') {
     messageStore.markMessageAsRead(messageId)
   }
 }
@@ -156,13 +203,13 @@ function markMessageAsRead(messageId) {
 let typingTimeout
 function handleTyping() {
   if (!currentChatPartner.value) return
-  
+
   // Set typing indicator
   messageStore.setTypingIndicator(currentChatPartner.value.id, true)
-  
+
   // Clear previous timeout
   clearTimeout(typingTimeout)
-  
+
   // Set new timeout to clear typing indicator after 1 second of inactivity
   typingTimeout = setTimeout(() => {
     if (currentChatPartner.value) {
@@ -171,109 +218,77 @@ function handleTyping() {
   }, 1000)
 }
 
-// Get message status icon
-function getStatusIcon(messageId) {
-  const status = messageStore.messageStatus[messageId]
-  switch (status) {
-    case 'sent': return 'mdi-check'
-    case 'delivered': return 'mdi-check-all'
-    case 'read': return 'mdi-check-all'
-    default: return 'mdi-clock-outline'
-  }
-}
-
-// Get message status color
-function getStatusColor(messageId) {
-  const status = messageStore.messageStatus[messageId]
-  return status === 'read' ? 'light-blue' : 'grey-lighten-1'
-}
-
 onMounted(async () => {
-  // Load messages on component mount
+  // Ensure user is authenticated and userData is loaded
   await authStore.isAuthenticated()
-  await messageStore.fetchMessages()
+})
 
-  // If there's a chat ID in the route, select that chat
-  const chatId = route.params.id
-  if (chatId) {
-    const partner = chatList.value.find((chat) => chat.id === chatId)
-    if (partner) {
-      selectChatPartner(partner)
+// Watch for currentUserId to be set, then fetch messages and auto-select chat
+watch(
+  () => currentUserId.value,
+  async (userId) => {
+    if (userId) {
+      await messageStore.fetchMessages()
+      if (chatList.value.length > 0 && !currentChatPartner.value) {
+        selectChatPartner(chatList.value[0])
+      }
     }
-  } else if (chatList.value.length > 0) {
-    // Otherwise select the first chat
-    selectChatPartner(chatList.value[0])
-  }
+  },
+  { immediate: true },
+)
+
+onUnmounted(() => {
+  // Clean up real-time subscription when leaving the view
+  messageStore.cleanup()
 })
 </script>
 
 <template>
   <MessageLayout @toggle-navigation="handleToggleNavigation">
     <template #content>
-      <v-row
-        class="d-flex"
-        style="
-          position: fixed;
-          top: 60px;
-          left: 0;
-          width: 100%;
-          height: calc(100vh - 60px);
-          overflow: hidden;
-          margin: 0;
-          padding: 0;
-        "
-      >
-        <!-- SIDEBAR -->
-        <v-col
-          cols="12"
-          md="3"
-          class="d-flex flex-column bg-light"
-          style="border-right: 1px solid #ddd; overflow-y: auto; padding: 0"
-          v-if="mobile ? hideDisplay : !hideDisplay"
-        >
-          <v-card flat class="py-4 px-3" elevation="0">
-            <v-row>
-              <v-col cols="12" class="d-flex align-center">
-                <router-link to="/system/passenger-dashboard">
-                  <v-icon size="30" class="mr-2">mdi-keyboard-backspace</v-icon>
-                </router-link>
-                <h2 class="text-h6 font-weight-bold mb-0">Chats</h2>
-              </v-col>
-            </v-row>
-          </v-card>
-          <v-divider></v-divider>
+      <div class="chat-layout">
+        <!-- TOP HEADER -->
+        <div class="app-header">
+          <router-link to="/system/passenger-dashboard" class="back-link">
+            <v-icon>mdi-arrow-left</v-icon> BACK TO DASHBOARD
+          </router-link>
+          <div class="page-title">Messages</div>
+        </div>
 
-          <div v-if="messageStore.isLoading" class="pa-4 text-center">
-            <v-progress-circular indeterminate color="primary"></v-progress-circular>
-          </div>
-
-          <div v-else-if="chatList.length === 0" class="pa-4 text-center">
-            <p>No conversations yet</p>
-          </div>
-
-          <v-card
-            flat
-            class="py-3 mt-3 mx-3 cursor-pointer"
-            elevation="0"
-            v-for="chat in chatList"
-            :key="chat.id"
-            style="border: 1px solid #ddd; border-radius: 8px"
-            :class="{
-              'bg-purple-lighten-5': currentChatPartner && currentChatPartner.id === chat.id,
-            }"
-            @click="selectChatPartner(chat)"
-          >
-            <div class="d-flex align-center">
-              <img :src="chat.ava" alt="Avatar" width="50" class="avatar-img mr-3" />
-              <div class="title-container">
-                <v-card-title class="text-h6 mb-1">{{ chat.name }}</v-card-title>
-                <v-card-subtitle class="text-subtitle-2 text-truncate">
-                  {{ chat.lastMessage }}
-                </v-card-subtitle>
+        <div class="main-container">
+          <!-- SIDEBAR -->
+          <div class="sidebar-container" v-if="mobile ? drawer : true">
+            <div class="sidebar-header">
+              <div class="d-flex align-center">
+                <h2 class="text-h6 font-weight-medium">Chats</h2>
               </div>
             </div>
-          </v-card>
-        </v-col>
+
+            <div v-if="messageStore.isLoading" class="pa-4 text-center">
+              <v-progress-circular indeterminate color="primary"></v-progress-circular>
+            </div>
+
+            <div v-else-if="chatList.length === 0" class="pa-4 text-center">
+              <p>No conversations yet</p>
+            </div>
+
+            <div
+              v-for="chat in chatList"
+              :key="chat.id"
+              class="chat-list-item"
+              :class="{ 'selected-chat': currentChatPartner && currentChatPartner.id === chat.id }"
+              @click="selectChatPartner(chat)"
+            >
+              <div class="chat-avatar">
+                <img :src="chat.ava" alt="Avatar" class="avatar-img" />
+              </div>
+              <div class="chat-info">
+                <div class="chat-name">{{ chat.id === currentUserId ? 'Me' : 'Partner' }}</div>
+                <div class="chat-preview">{{ chat.lastMessage }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Mobile Navigation Drawer -->
         <v-navigation-drawer v-if="mobile" v-model="drawer" :location="'left'" :width="300">
@@ -287,67 +302,26 @@ onMounted(async () => {
 
             <v-divider></v-divider>
 
-            <v-list-item v-if="chatList.length === 0" class="pa-4 text-center">
-              No conversations yet
-            </v-list-item>
+            <div v-if="chatList.length === 0" class="pa-4 text-center">No conversations yet</div>
 
             <v-list-item
               v-for="(chat, index) in chatList"
               :key="index"
-              class="pa-2 cursor-pointer"
+              class="chat-list-item-mobile"
               @click="selectChatPartner(chat)"
               :class="{
-                'bg-purple-lighten-5': currentChatPartner && currentChatPartner.id === chat.id
+                'bg-purple-lighten-5': currentChatPartner && currentChatPartner.id === chat.id,
               }"
             >
               <div class="d-flex align-center w-100">
-                <!-- Contact Avatar -->
-                <div class="position-relative">
-                  <v-avatar size="40" class="mr-3">
-                    <v-img
-                      :src="chat.ava"
-                      :alt="chat.name"
-                      class="rounded-circle"
-                      cover
-                    >
-                      <template v-slot:placeholder>
-                        <div class="d-flex align-center justify-center fill-height bg-grey-lighten-3">
-                          {{ chat.name.charAt(0).toUpperCase() }}
-                        </div>
-                      </template>
-                    </v-img>
-                  </v-avatar>
-                  
-                  <!-- Online indicator -->
-                  <div v-if="messageStore.typingUsers[chat.id]" class="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
+                <div class="chat-avatar">
+                  <img src="/images/ava.png" alt="Avatar" class="avatar-img" />
                 </div>
-                
-                <!-- Contact Info -->
-                <div class="title-container flex-grow-1">
-                  <div class="d-flex justify-space-between align-center">
-                    <div class="d-flex align-center">
-                      <div class="text-subtitle-1 font-weight-medium text-truncate">{{ chat.name }}</div>
-                      <!-- Unread message badge -->
-                      <v-badge 
-                        v-if="messageStore.unreadMessages[chat.id] && messageStore.unreadMessages[chat.id].length > 0"
-                        :content="messageStore.unreadMessages[chat.id].length"
-                        color="error"
-                        class="ml-2"
-                      ></v-badge>
-                    </div>
-                    <div class="text-caption text-grey" v-if="chat.timestamp">
-                      {{ formatTime(chat.timestamp) }}
-                    </div>
+                <div class="chat-info">
+                  <div class="chat-name">
+                    {{ chat.id === currentUserId ? 'Me' : 'Partner' }}
                   </div>
-                  <div class="d-flex align-center">
-                    <div class="text-caption text-truncate" style="max-width: 180px">
-                      {{ messageStore.typingUsers[chat.id] ? 'Typing...' : chat.lastMessage }}
-                    </div>
-                  </div>
+                  <div class="chat-preview">{{ chat.lastMessage || '\u00A0' }}</div>
                 </div>
               </div>
             </v-list-item>
@@ -355,191 +329,287 @@ onMounted(async () => {
         </v-navigation-drawer>
 
         <!-- CHAT AREA -->
-        <v-col cols="12" md="9" class="d-flex flex-column" style="padding: 0; margin: 0">
-          <!-- HEADER -->
-          <v-card
-            flat
-            class="d-flex align-center py-3"
-            elevation="0"
-            style="border-bottom: 1px solid #ddd; margin: 0"
-            v-if="currentChatPartner"
-          >
-            <img :src="currentChatPartner.ava" alt="Avatar" width="50" class="avatar-img mr-3" />
-            <div class="title-container">
-              <v-card-title class="text-h6 mb-1">{{ currentChatPartner.name }}</v-card-title>
-              <v-card-subtitle class="text-subtitle-2">Last seen recently</v-card-subtitle>
-            </div>
-            <v-spacer></v-spacer>
-            <v-icon size="24" class="me-3">mdi-phone-outline</v-icon>
-          </v-card>
-
-          <v-divider></v-divider>
-
-          <!-- MESSAGE DISPLAY AREA -->
-          <div
-            class="flex-grow-1 px-4 py-3 message-container"
-            style="background-color: #f5f5f5; margin: 0; overflow-y: auto"
-          >
-            <div v-if="!currentChatPartner" class="text-center my-4">
-              <p>Select a conversation to start chatting</p>
-            </div>
-
-            <div v-else-if="currentMessages.length === 0" class="text-center my-4">
-              <p>No messages yet. Send a message to start the conversation!</p>
-            </div>
-
-            <div
-              v-for="(msg, index) in currentMessages"
-              :key="index"
-              :class="[
-                'message-bubble my-2 pa-3 rounded-lg',
-                msg.from === 'me'
-                  ? 'align-self-end ms-auto bg-purple-darken-4 text-white'
-                  : 'align-self-start bg-white text-black',
-              ]"
-              style="max-width: 70%"
-              @click="markMessageAsRead(msg.id)"
-            >
-              {{ msg.text }}
-              <div class="d-flex justify-space-between align-center message-footer">
-                <div class="message-status" v-if="msg.from === 'me'">
-                  <v-icon 
-                    size="x-small" 
-                    :color="getStatusColor(msg.id)"
-                    class="mr-1"
-                  >
-                    {{ getStatusIcon(msg.id) }}
-                  </v-icon>
-                </div>
-                <div class="message-time text-caption" :class="{ 'ms-auto': msg.from === 'me' }">
-                  {{
-                    new Date(msg.timestamp).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  }}
+        <div class="chat-content">
+          <template v-if="currentChatPartner">
+            <!-- CHAT HEADER -->
+            <div class="chat-header">
+              <div class="d-flex align-center">
+                <v-btn v-if="mobile" icon class="mr-2" @click="drawer = true">
+                  <v-icon>mdi-menu</v-icon>
+                </v-btn>
+                <img src="/images/ava.png" alt="Avatar" class="chat-header-avatar" />
+                <div class="chat-header-info">
+                  <div class="chat-header-name">
+                    {{ currentChatPartner.id === currentUserId ? 'Me' : 'Partner' }}
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <!-- Typing indicator for the current chat partner -->
-            <div 
-              v-if="currentChatPartner && messageStore.typingUsers[currentChatPartner.id]"
-              class="message-bubble my-2 pa-3 rounded-lg align-self-start bg-white text-black typing-container"
-            >
-              <div class="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
+
+            <!-- MESSAGE DISPLAY AREA -->
+            <div class="messages-container">
+              <div v-if="!currentMessages.length" class="no-messages">
+                No messages yet. Send a message to start the conversation!
+              </div>
+
+              <div
+                v-for="(msg, index) in currentMessages"
+                :key="index"
+                :class="[
+                  'message-bubble',
+                  msg.from === 'me' ? 'message-outgoing' : 'message-incoming',
+                ]"
+                @click="markMessageAsRead(msg.id)"
+              >
+                {{ msg.text }}
+                <div class="message-timestamp">
+                  {{ formatTime(msg.timestamp) }}
+                </div>
+              </div>
+
+              <!-- Typing indicator for the current chat partner -->
+              <div
+                v-if="messageStore.typingUsers && messageStore.typingUsers[currentChatPartner.id]"
+                class="message-bubble message-incoming typing-container"
+              >
+                <div class="typing-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- INPUT FIELD -->
-          <v-sheet
-            class="d-flex align-center px-4 py-3 mb-0"
-            elevation="2"
-            style="background-color: white; margin: 0; padding: 0"
-            v-if="currentChatPartner"
-          >
-            <v-text-field
-              v-model="message"
-              :append-icon="message ? 'mdi-send' : 'mdi-microphone'"
-              placeholder="Type a message"
-              type="text"
-              variant="outlined"
-              density="compact"
-              rounded="pill"
-              class="flex-grow-1"
-              @keyup.enter="sendMessage"
-              @click:append="sendMessage"
-              @input="handleTyping"
-            />
-          </v-sheet>
-        </v-col>
-      </v-row>
+            <!-- INPUT FIELD -->
+            <div class="message-input-container">
+              <v-textarea
+                v-model="message"
+                :rows="1"
+                auto-grow
+                placeholder="Type a message..."
+                @keydown="handleTyping"
+                @keyup.enter.prevent="sendMessage"
+              ></v-textarea>
+              <v-btn color="primary" :disabled="!message.trim()" @click="sendMessage"> Send </v-btn>
+            </div>
+          </template>
+          <template v-else>
+            <div class="empty-state">
+              <div class="empty-text">Select a conversation to start chatting</div>
+            </div>
+          </template>
+        </div>
+      </div>
     </template>
   </MessageLayout>
 </template>
 
 <style scoped>
+/* Overall Layout */
+.chat-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.app-header {
+  background-color: #7c3aed;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  height: 60px;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.main-container {
+  display: flex;
+  height: calc(100vh - 60px);
+  overflow: hidden;
+}
+
+/* Sidebar Styles */
+.sidebar-container {
+  width: 320px;
+  background-color: white;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.chat-list-item {
+  display: flex;
+  padding: 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background-color 0.2s;
+}
+
+.chat-list-item:hover {
+  background-color: #f9f9f9;
+}
+
+.chat-list-item.selected-chat {
+  background-color: #f0e6ff;
+}
+
+.chat-list-item-mobile {
+  padding: 10px 15px;
+  cursor: pointer;
+}
+
+.chat-avatar {
+  margin-right: 15px;
+}
+
 .avatar-img {
-  border-radius: 100%;
-  padding: 5px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
-.title-container {
+.chat-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.chat-name {
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+
+.chat-preview {
+  color: #757575;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Chat Content Styles */
+.chat-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  background-color: #f5f5f5;
+  overflow: hidden;
 }
 
-.title-container .v-card-title {
-  margin-bottom: 0;
-  line-height: 1.2;
-}
-
-.title-container .v-card-subtitle {
-  margin-top: -5px;
-  font-size: 0.9rem;
-  color: gray;
-}
-
-.message-container {
+.chat-header {
+  background-color: #7c3aed;
+  color: white;
+  padding: 10px 20px;
   display: flex;
-  flex-direction: column;
-  padding: 16px;
+  align-items: center;
+}
+
+.chat-header-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.chat-header-name {
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.no-messages {
+  text-align: center;
+  color: #757575;
+  margin-top: 40px;
 }
 
 .message-bubble {
+  max-width: 80%;
+  padding: 10px 15px;
+  border-radius: 18px;
+  margin-bottom: 8px;
   position: relative;
-  display: inline-block;
-  margin-bottom: 10px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.message-time {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin-top: 4px;
+.message-incoming {
+  background-color: white;
+  color: #333;
+  align-self: flex-start;
+  margin-right: auto;
+  border-bottom-left-radius: 5px;
 }
 
-.message-bubble.bg-white .message-time {
-  color: rgba(0, 0, 0, 0.5);
+.message-outgoing {
+  background-color: #7c3aed;
+  color: white;
+  align-self: flex-end;
+  margin-left: auto;
+  border-bottom-right-radius: 5px;
 }
 
-.message-footer {
-  margin-top: 4px;
+.message-timestamp {
+  font-size: 11px;
+  margin-top: 3px;
+  opacity: 0.8;
+  text-align: right;
+}
+
+.message-input-container {
+  padding: 15px;
+  background-color: white;
+  border-top: 1px solid #e0e0e0;
+}
+
+.message-input {
   width: 100%;
 }
 
-.message-status {
+.empty-state {
   display: flex;
   align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.empty-text {
+  color: #757575;
+  font-size: 16px;
 }
 
 /* Typing indicators */
-.position-relative {
-  position: relative;
-}
-
-.typing-indicator {
-  position: absolute;
-  bottom: -2px;
-  right: 0;
-  background-color: #4CAF50;
-  border-radius: 50%;
-  width: 12px;
-  height: 12px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 2px solid white;
-}
-
 .typing-container {
-  padding: 10px 16px;
-  max-width: 100px;
+  max-width: 70px;
+  padding: 10px;
 }
 
 .typing-dots {
@@ -552,7 +622,7 @@ onMounted(async () => {
   height: 8px;
   width: 8px;
   margin: 0 2px;
-  background-color: #9E9E9E;
+  background-color: #9e9e9e;
   border-radius: 50%;
   display: inline-block;
   animation: typing 1.4s infinite ease-in-out both;
@@ -571,11 +641,13 @@ onMounted(async () => {
 }
 
 @keyframes typing {
-  0%, 80%, 100% { 
+  0%,
+  80%,
+  100% {
     transform: scale(0.6);
     opacity: 0.6;
   }
-  40% { 
+  40% {
     transform: scale(1);
     opacity: 1;
   }

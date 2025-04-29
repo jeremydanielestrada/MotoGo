@@ -3,7 +3,6 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { useDisplay } from 'vuetify'
 import { supabase } from '@/utils/supabase'
 import { useAuthUserStore } from '@/stores/authUser'
-
 const { mdAndUp, smAndDown } = useDisplay()
 const drawer = ref(false)
 const userRole = ref(null)
@@ -38,7 +37,9 @@ const dashboardPath = computed(() => {
 
 // Combine the onMounted hooks
 onMounted(async () => {
-  drawer.value = false // Always start with drawer closed
+  if (mdAndUp.value) {
+    drawer.value = false // Always start with drawer closed
+  }
 
   // Get user role directly from Supabase
   await checkUserRole()
@@ -47,12 +48,14 @@ onMounted(async () => {
 watch(
   mdAndUp,
   (isDesktop) => {
-    if (isDesktop) {
-      drawer.value = false // Always close drawer on desktop
-    }
+    if (isDesktop) drawer.value = false // Always close drawer on desktop
   },
   { immediate: true },
 )
+
+function handleToggleNavigation(state) {
+  drawer.value = state
+}
 </script>
 
 <template>
@@ -79,7 +82,7 @@ watch(
     </v-app-bar>
 
     <v-main>
-      <slot name="content"></slot>
+      <slot name="content" :drawer="drawer" :onToggleNavigation="handleToggleNavigation"> </slot>
     </v-main>
   </v-app>
 </template>

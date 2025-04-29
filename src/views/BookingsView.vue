@@ -563,9 +563,8 @@ const setupRealTimeStatusUpdates = () => {
         // Update the active booking with driver information
         bookingStore.activeBooking = {
           ...bookingStore.activeBooking,
-          driver_id: payload.payload.driver_id,
-          driver_name: payload.payload.driver_name,
-          status: 'accepted',
+          rider_id: payload.payload.rider_id,
+          rider_name: payload.payload.rider_name,
           accepted_at: payload.payload.accepted_at,
         }
 
@@ -575,7 +574,7 @@ const setupRealTimeStatusUpdates = () => {
         // Show notification
         if ('Notification' in window && Notification.permission === 'granted') {
           new Notification('MotoGo Booking Update', {
-            body: `Your booking was accepted by ${payload.payload.driver_name}`,
+            body: `Your booking was accepted by ${payload.payload.rider_name}`,
             icon: '/images/logo.png',
           })
         }
@@ -629,7 +628,7 @@ onUnmounted(() => {
 // Message the driver
 const messageDriver = async () => {
   try {
-    if (!bookingStore.activeBooking?.driver_id) {
+    if (!bookingStore.activeBooking?.rider_id) {
       console.error('No driver assigned yet')
       return
     }
@@ -638,7 +637,7 @@ const messageDriver = async () => {
     bookingComplete.value = false
 
     // Navigate to the message view with this driver
-    router.replace(`/messages/${bookingStore.activeBooking.driver_id}`)
+    router.replace(`/messages/${bookingStore.activeBooking.rider_id}`)
   } catch (err) {
     console.error('Error setting up messaging:', err)
   }
@@ -928,16 +927,16 @@ const carouselHeight = computed(() => {
                   {{ bookingStore.availableDrivers.length }} drivers nearby
                 </div>
                 <v-list lines="two">
-                  <v-list-item v-for="driver in bookingStore.availableDrivers" :key="driver.id">
+                  <v-list-item v-for="rider in bookingStore.availableDrivers" :key="rider.id">
                     <template v-slot:prepend>
                       <v-avatar color="primary">
-                        <span class="text-h6 text-white">{{ driver.name.charAt(0) }}</span>
-                      </v-avatar>
+                        <span class="text-h6 text-white">{{ rider.name.charAt(0) }}</span>
+                      </v-avatar> // unchanged, just for context
                     </template>
-                    <v-list-item-title>{{ driver.name }}</v-list-item-title>
+                    <v-list-item-title>{{ rider.name }}</v-list-item-title> // unchanged, just for context
                     <v-list-item-subtitle>
-                      {{ driver.distance }}km away • Rating: {{ driver.rating }}/5
-                    </v-list-item-subtitle>
+                      {{ rider.distance }}km away • Rating: {{ rider.rating }}/5
+                    </v-list-item-subtitle> // unchanged, just for context
                   </v-list-item>
                 </v-list>
               </div>
