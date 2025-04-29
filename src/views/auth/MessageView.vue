@@ -85,7 +85,7 @@ const currentMessages = computed(() => {
       // Handle missing created_at fields
       const dateA = a.created_at ? new Date(a.created_at) : new Date(0)
       const dateB = b.created_at ? new Date(b.created_at) : new Date(0)
-      return dateB - dateA
+      return dateA - dateB
     })
     .map((msg) => ({
       ...msg,
@@ -249,7 +249,7 @@ watch(
     // No need to do anything else as Vue will automatically update the UI
     console.log('Messages updated in store, refreshing UI')
   },
-  { deep: true } // Deep watch to detect changes in the array items
+  { deep: true }, // Deep watch to detect changes in the array items
 )
 
 // Function to manually refresh messages
@@ -318,10 +318,10 @@ onUnmounted(() => {
     <template #content>
       <div class="messenger-layout">
         <!-- CHAT AREA -->
-        <div class="messenger-content">
+        <div class="messenger-content" style="position: relative">
           <template v-if="currentChatPartner">
             <!-- CHAT HEADER -->
-            <div class="messenger-chat-header">
+            <div class="messenger-chat-header" style="position: fixed; top: 55px; z-index: 2">
               <div class="d-flex align-center justify-space-between w-100">
                 <div class="d-flex align-center">
                   <v-avatar size="40" class="mr-3">
@@ -340,14 +340,32 @@ onUnmounted(() => {
                     </div>
                   </div>
                 </div>
-                <v-btn icon variant="text" @click="refreshMessages" :loading="messageStore.isLoading">
+                <v-btn
+                  icon
+                  variant="text"
+                  @click="refreshMessages"
+                  :loading="messageStore.isLoading"
+                >
                   <v-icon>mdi-refresh</v-icon>
                 </v-btn>
               </div>
             </div>
 
             <!-- MESSAGE DISPLAY AREA -->
-            <div class="messenger-messages-container">
+            <div
+              class="messenger-messages-container"
+              style="
+                flex: 1;
+                padding: 16px;
+                padding-top: 70px;
+                padding-bottom: 50px;
+                overflow-y: auto;
+                background-color: #f0f2f5;
+                display: flex;
+                flex-direction: column;
+                height: calc(100vh - 130px);
+              "
+            >
               <div v-if="!currentMessages.length" class="messenger-no-messages">
                 <v-icon size="64" color="grey-lighten-2" class="mb-4"
                   >mdi-message-text-outline</v-icon
@@ -388,7 +406,7 @@ onUnmounted(() => {
             </div>
 
             <!-- INPUT FIELD -->
-            <div class="messenger-input-container">
+            <div class="messenger-input-container" style="position: fixed; bottom: 0; z-index: 2">
               <v-textarea
                 v-model="message"
                 :rows="1"
@@ -481,6 +499,7 @@ onUnmounted(() => {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  position: relative;
 }
 
 .messenger-chat-header {
@@ -488,16 +507,20 @@ onUnmounted(() => {
   background-color: white;
   border-bottom: 1px solid #e4e6eb;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  z-index: 1;
+  z-index: 2;
+  position: sticky;
+  top: 0;
+  width: 100%;
 }
 
 .messenger-messages-container {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column-reverse;
   background-color: #f0f2f5;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 130px);
 }
 
 .messenger-no-messages {
@@ -618,6 +641,10 @@ onUnmounted(() => {
   padding: 12px 16px;
   background-color: white;
   border-top: 1px solid #e4e6eb;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  width: 100%;
 }
 
 .messenger-input {

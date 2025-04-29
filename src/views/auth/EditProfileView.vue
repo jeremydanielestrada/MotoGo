@@ -1,10 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { getAvatarText } from '@/utils/helpers'
 import { getuserInformation } from '@/utils/supabase'
 import { watch } from 'vue'
 import { useAuthUserStore } from '@/stores/authUser'
-
+import { supabase } from '@/utils/supabase'
 const uploadImg = useAuthUserStore()
 
 const loadingUser = ref(true)
@@ -18,6 +18,8 @@ const userData = ref({
   phone_num: '',
   image_url: '',
 })
+const userRole = ref(null)
+
 
 // const onFileChange = async (event) => {
 //   const file = event.target.files[0]
@@ -105,6 +107,45 @@ const onFileChange = async (event) => {
 // }
 
 
+
+
+// Check if user is a driver directly from Supabase
+async function checkUserRole() {
+  const { data, error } = await supabase.auth.getUser()
+
+  if (error) {
+    console.error('Error getting user:', error.message)
+    return null
+  }
+
+  if (data && data.user) {
+    // Store the role in a local ref
+    userRole.value = data.user.user_metadata?.is_driver === true ? 'driver' : 'passenger'
+    return data.user
+  }
+
+  return null
+}
+
+// Determine dashboard path based on direct user role check
+const dashboardPath = computed(() => {
+  return userRole.value === 'driver' ? '/system/rider-dashboard' : '/system/passenger-dashboard'
+})
+
+// Combine the onMounted hooks
+onMounted(async () => {
+  // Get user role directly from Supabase
+  await checkUserRole()
+})
+
+
+
+
+
+
+
+
+
 const getuser = async () => {
   loadingUser.value = true
   const userMetaData = await getuserInformation()
@@ -163,7 +204,8 @@ const fallbackImage = ref('/images/ava.png')
     <v-card>
       <div class="background-pic" elevation="5">
         <v-img src="coverPhoto" height="200px" class="bg-purple-lighten-4">
-          <v-btn to="/system/passenger-dashboard" text class="ma-2 ">
+          <v-btn 
+          :to="dashboardPath" text class="ma-2 ">
             <v-icon>mdi-keyboard-backspace</v-icon>
             back
           </v-btn>
