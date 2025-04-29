@@ -6,7 +6,7 @@ import ProfileNavigation from '../navigations/ProfileNavigation.vue'
 import { useBookingStore } from '@/stores/bookings'
 import { useRoute } from 'vue-router'
 
-const icons = ['mdi-facebook', 'mdi-twitter', 'mdi-linkedin', 'mdi-instagram']
+// const icons = ['mdi-facebook', 'mdi-twitter', 'mdi-linkedin', 'mdi-instagram']
 
 const { mobile } = useDisplay()
 const bookingStore = useBookingStore()

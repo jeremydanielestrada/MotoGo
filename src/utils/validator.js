@@ -138,7 +138,9 @@ export const imageValidator = (value) => {
 export const phoneNumberValidator = (value) => {
   if (isEmpty(value)) return true
 
-  const re = /^\+1\s\(\d{3}\)\s\d{3}-\d{4}$/
+  const re = /^(09|\+639)\d{9}$/
 
-  return re.test(String(value)) || 'The phone number must be in the format +1 (XXX) XXX-XXXX'
+  return (
+    re.test(String(value)) || 'The phone number must be in the format 09xxxxxxxxx or +639xxxxxxxxx'
+  )
 }

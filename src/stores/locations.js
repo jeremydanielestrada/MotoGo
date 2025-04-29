@@ -66,25 +66,36 @@ export const useLocationStore = defineStore('locations', () => {
 
     if (!userId) {
       console.error('User not logged in')
-      return
+      return null
     }
 
+    // Ensure all required fields are present
     const payload = {
       longitude_a: location.longitude_a,
       latitude_a: location.latitude_a,
-      longitude_b: location.longitude_b,
-      latitude_b: location.latitude_b,
+      longitude_b: location.longitude_b || null,
+      latitude_b: location.latitude_b || null,
       user_id: userId,
     }
 
-    const { data, error } = await supabase.from('locations').insert([payload]).select()
+    console.log('Adding location with payload:', payload)
+
+    // Use .select() to return the inserted data
+    const { data, error } = await supabase
+      .from('locations')
+      .insert([payload])
+      .select()
 
     if (error) {
       console.error('Error adding location:', error)
-    } else if (data) {
+      return null
+    } else if (data && data.length > 0) {
+      console.log('Location added successfully:', data[0])
       getLocation.value.push(...data)
+      return data[0]
     } else {
       console.warn('No data returned from Supabase insert')
+      return null
     }
   }
 

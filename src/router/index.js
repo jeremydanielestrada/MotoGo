@@ -1,10 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '@/views/auth/LoginView.vue'
-import MessageView from '@/views/MessageView.vue'
+import MessageView from '@/views/auth/MessageView.vue'
 import MobileNotifacations from '@/components/common/MobileNotifacations.vue'
 import { isAuthenticated, getuserInformation } from '@/utils/supabase'
 import NotFoundView from '@/views/errors/NotFoundView.vue'
 import ForbiddenView from '@/views/errors/ForbiddenView.vue'
+
+import EditProfileView from '@/views/auth/EditProfileView.vue'
+
 import PassengerDashboardView from '@/views/dashboard/PassengerDashboardView.vue'
 import RiderDashboardView from '@/views/dashboard/RiderDashboardView.vue'
 import BookingsView from '@/views/BookingsView.vue'
@@ -27,6 +30,12 @@ const router = createRouter({
     {
       path: '/message',
       name: 'Messages',
+      component: MessageView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/messages/:id',
+      name: 'MessageDetail',
       component: MessageView,
       meta: { requiresAuth: true },
     },
@@ -66,6 +75,12 @@ const router = createRouter({
       path: '/forbidden',
       name: 'forbidden',
       component: ForbiddenView,
+    },
+    {
+      path: '/edit-profile',
+      name: 'EditProfile',
+      component: EditProfileView,
+      meta: { requiresAuth: true },
     },
   ],
 })
