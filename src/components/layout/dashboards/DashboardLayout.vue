@@ -119,6 +119,7 @@ const isActive = (path) => route.path === path
           v-if="mobile ? hideDisplay : !hideDisplay"
         >
           <v-btn
+            variant="text"
             :class="{ 'active-btn': isActive('/system/passenger-dashboard') }"
             to="/system/passenger-dashboard"
           >
@@ -147,6 +148,8 @@ const isActive = (path) => route.path === path
 
 <style scoped>
 .active-btn {
-  background-color: #e1bee7;
+  border-bottom: 4px solid #6a1b9a;
+  background-color: white !important;
+  border-radius: 20%;
 }
 </style>

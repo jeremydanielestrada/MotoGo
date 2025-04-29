@@ -41,8 +41,6 @@ const userData = ref({
 //   }
 // }
 
-
-
 // const onFileChange = async (event) => {
 //   const file = event.target.files[0]
 //   if (!file) return
@@ -64,9 +62,6 @@ const userData = ref({
 //   }
 // }
 
-
-
-
 /// working function
 const onFileChange = async (event) => {
   const file = event.target.files[0]
@@ -77,7 +72,7 @@ const onFileChange = async (event) => {
     // Force a refresh of user data
     await getuser()
     // Force component re-render
-    userData.value = {...userData.value}
+    userData.value = { ...userData.value }
   } catch (error) {
     console.error('Error updating image:', error)
     alert('Failed to upload image')
@@ -104,9 +99,6 @@ const onFileChange = async (event) => {
 //   loadingUser.value = false
 // }
 
-
-
-
 const getuser = async () => {
   loadingUser.value = true
   const userMetaData = await getuserInformation()
@@ -117,8 +109,8 @@ const getuser = async () => {
     return
   }
 
-  console.log('Retrieved user data:', userMetaData)  // Add this to debug
-  
+  console.log('Retrieved user data:', userMetaData) // Add this to debug
+
   userData.value.id = userMetaData.id
   userData.value.email = userMetaData.email
   userData.value.fullname = userMetaData.firstname + ' ' + userMetaData.lastname
@@ -126,25 +118,15 @@ const getuser = async () => {
   userData.value.is_driver = userMetaData?.is_driver
   userData.value.phone_num = userMetaData.phone
   userData.value.image_url = userMetaData.image_url
-  
-  console.log('Updated userData image_url:', userData.value.image_url)  // Add this to debug
-  
+
+  console.log('Updated userData image_url:', userData.value.image_url) // Add this to debug
+
   loadingUser.value = false
 }
-
-
-
-
-
 
 onMounted(() => {
   getuser()
 })
-
-
-
-
-
 
 // EDIT FOR DETAILS
 const plateNumber = ref(localStorage.getItem('plateNumber') || '')
@@ -174,9 +156,9 @@ const fallbackImage = ref('/images/ava.png')
     <!-- Cover Photo -->
     <v-card>
       <div class="background-pic" elevation="5">
-        <v-img src="coverPhoto" height="200px" class="bg-purple-lighten-4">
+        <v-img height="200px" class="bg-purple-lighten-2">
           <router-link to="/system/passenger-dashboard">
-            <v-icon size="30" class="ml-4 mt-2">mdi-keyboard-backspace</v-icon>
+            <v-icon color="white" size="30" class="ml-4 mt-2">mdi-keyboard-backspace</v-icon>
           </router-link>
           <input
             type="file"
@@ -192,10 +174,11 @@ const fallbackImage = ref('/images/ava.png')
     <!-- Profile Picture -->
     <div>
       <v-avatar size="150" class="profile-avatar elevation-4">
-        <v-img 
-        class="image-profile" 
-         :src="userData.image_url ? `${userData.image_url}?t=${Date.now()}` : fallbackImage"
-         :key="Date.now()" />
+        <v-img
+          class="image-profile"
+          :src="userData.image_url ? `${userData.image_url}?t=${Date.now()}` : fallbackImage"
+          :key="Date.now()"
+        />
         <v-btn icon class="ma-1 button-cover" @click.stop="$refs.profileInput.click()">
           <v-icon size="20">mdi-camera</v-icon>
         </v-btn>
@@ -206,6 +189,7 @@ const fallbackImage = ref('/images/ava.png')
           class="d-none"
           @change="onFileChange"
           :disabled="loadingUser"
+        />
       </v-avatar>
     </div>
 
@@ -391,7 +375,6 @@ const fallbackImage = ref('/images/ava.png')
 .background-pic {
   /* border: 2px solid whitesmoke; */
   border-bottom-right-radius: 30px;
-  cursor: pointer;
 }
 .card-details {
   padding: 20px;

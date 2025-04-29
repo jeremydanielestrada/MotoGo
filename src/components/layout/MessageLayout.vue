@@ -57,7 +57,7 @@ watch(
 
 <template>
   <v-app>
-    <v-app-bar color="purple-darken-3">
+    <v-app-bar color="white">
       <template v-slot:append>
         <v-icon v-show="smAndDown" @click="toggleDrawer" class="me-4" size="30"
           >mdi-message-outline</v-icon
@@ -65,7 +65,7 @@ watch(
       </template>
 
       <!-- Use the computed dashboardPath -->
-      <v-btn :to="dashboardPath" v-if="mdAndUp">
+      <v-btn class="text-purple-darken-3" :to="dashboardPath" v-if="mdAndUp">
         <v-icon> mdi-keyboard-backspace </v-icon>
         Back to Dashboard
       </v-btn>
@@ -75,7 +75,7 @@ watch(
       </v-btn>
 
       <v-spacer></v-spacer>
-      <h1 class="text-h6 font-weight-bold me-5">Messages</h1>
+      <h1 class="text-h6 font-weight-bold me-5 text-purple-darken-3">Messages</h1>
     </v-app-bar>
 
     <v-main>

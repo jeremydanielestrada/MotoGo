@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { LMap, LTileLayer, LMarker, LPopup, LIcon, LPolyline } from '@vue-leaflet/vue-leaflet'
 import { useLocationStore } from '@/stores/locations'
-import { OpenRouteService } from '@/utils/openrouteService'
+import { OpenRouteService } from '@/utils/openrouteservice'
 import 'leaflet/dist/leaflet.css'
 
 // Vue location setup
@@ -575,7 +575,7 @@ const carouselHeight = computed(() => {
             </v-card-subtitle>
             <v-card-text>
               <div class="d-flex mb-2">
-                <v-btn color="primary" class="mr-2" @click="centerOnUserLocation">
+                <v-btn color="purple-lighten-2" class="mr-2" @click="centerOnUserLocation">
                   <v-icon left>mdi-crosshairs-gps</v-icon>
                   Find Me
                 </v-btn>
@@ -671,7 +671,7 @@ const carouselHeight = computed(() => {
 
                 <!-- Button to set current location as pickup -->
                 <v-btn
-                  color="primary"
+                  color="purple-darken-3"
                   class="mb-4"
                   block
                   @click="setPickupToCurrentLocation"
@@ -729,7 +729,13 @@ const carouselHeight = computed(() => {
                   class="mb-4"
                 ></v-textarea>
 
-                <v-btn type="submit" color="primary" block :disabled="!canBook" :loading="loading">
+                <v-btn
+                  type="submit"
+                  color="purple-darken-3"
+                  block
+                  :disabled="!canBook"
+                  :loading="loading"
+                >
                   Book Now
                 </v-btn>
               </v-form>

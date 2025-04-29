@@ -412,23 +412,25 @@ const carouselHeight = computed(() => {
       </v-row>
 
       <!-- Call To Action Section -->
-      <v-sheet color="purple-darken-3" class="py-10 my-12">
+      <v-sheet color="purple-lighten-4" class="py-10 my-12">
         <v-container>
           <v-row justify="center" align="center">
             <v-col cols="12" md="8" class="text-center">
-              <h2 class="text-h3 text-white font-weight-bold mb-4">Ready to Experience MotoGo?</h2>
+              <h2 class="text-h3 text-purple-darken-3 font-weight-bold mb-4">
+                Ready to Experience MotoGo?
+              </h2>
               <p class="text-h6 text-white-darken-2 mb-6">
                 Download our app today and enjoy your first ride with a special discount!
               </p>
               <v-row justify="center">
                 <v-col cols="auto">
-                  <v-btn size="x-large" color="white" variant="elevated">
+                  <v-btn size="x-large" color="black" variant="outlined">
                     <v-icon start>mdi-apple</v-icon>
                     App Store
                   </v-btn>
                 </v-col>
                 <v-col cols="auto">
-                  <v-btn size="x-large" color="white" variant="elevated">
+                  <v-btn size="x-large" color="black" variant="outlined">
                     <v-icon start>mdi-google-play</v-icon>
                     Google Play
                   </v-btn>
@@ -440,37 +442,40 @@ const carouselHeight = computed(() => {
       </v-sheet>
 
       <!-- Enhanced Footer with purple-lighten-4 hover effect -->
-      <v-footer height="auto" class="pa-4 text-center" color="purple-darken-3">
+      <v-footer height="auto" class="pa-4 text-center" color="white">
         <v-container>
           <v-row justify="center">
             <v-col cols="12" md="4">
-              <h3 class="text-white font-weight-bold">MotoGo</h3>
+              <!-- <h3 class="text-white font-weight-bold">MotoGo</h3> -->
+              <img src="/images/motoGO.png" width="100px" />
               <p class="text-white-darken-2 mt-2">
                 Your trusted ride-hailing service. Making transportation accessible, affordable, and
                 safe.
               </p>
             </v-col>
             <v-col cols="12" md="4">
-              <h4 class="text-white font-weight-medium">Quick Links</h4>
+              <h2 class="text-purple font-weight-large">Quick Links</h2>
+              <v-divider></v-divider>
               <v-list density="compact" bg-color="transparent">
-                <v-list-item title="About Us" class="text-white"></v-list-item>
-                <v-list-item title="Services" class="text-white"></v-list-item>
-                <v-list-item title="Become a Driver" class="text-white"></v-list-item>
-                <v-list-item title="Contact" class="text-white"></v-list-item>
+                <v-list-item title="About Us" class="text-purple"></v-list-item>
+                <v-list-item title="Services" class="text-purple"></v-list-item>
+                <v-list-item title="Become a Driver" class="text-purple"></v-list-item>
+                <v-list-item title="Contact" class="text-purple"></v-list-item>
               </v-list>
             </v-col>
             <v-col cols="12" md="4">
-              <h4 class="text-white font-weight-medium">Contact Us</h4>
+              <h2 class="text-purple font-weight-bold">Contact Us</h2>
               <p class="text-white-darken-2">
-                <v-icon color="white" class="mr-2">mdi-email</v-icon> support@motogo.com
+                <v-icon color="purple-darken-3" class="mr-2">mdi-email</v-icon>
+                MotoGOSupport@gmail.com
               </p>
               <p class="text-white-darken-2">
-                <v-icon color="white" class="mr-2">mdi-phone</v-icon> 09851726699
+                <v-icon color="purple-darken-3" class="mr-2">mdi-phone</v-icon> 09851726699
               </p>
             </v-col>
           </v-row>
 
-          <v-divider color="purple-lighten-4" class="my-4"></v-divider>
+          <v-divider color="purple-darken-3" class="my-4"></v-divider>
 
           <v-row justify="center">
             <v-col cols="12">
@@ -484,6 +489,7 @@ const carouselHeight = computed(() => {
             <v-hover v-slot:default="{ isHovering, props }">
               <v-btn
                 icon
+                variant="text"
                 color="white"
                 href="https://facebook.com"
                 target="_blank"
@@ -495,13 +501,14 @@ const carouselHeight = computed(() => {
                   transition: 'background-color 0.3s ease',
                 }"
               >
-                <v-icon>mdi-facebook</v-icon>
+                <v-icon color="purple-darken-3">mdi-facebook</v-icon>
               </v-btn>
             </v-hover>
 
             <v-hover v-slot:default="{ isHovering, props }">
               <v-btn
                 icon
+                variant="text"
                 color="white"
                 href="https://twitter.com"
                 target="_blank"
@@ -513,13 +520,14 @@ const carouselHeight = computed(() => {
                   transition: 'background-color 0.3s ease',
                 }"
               >
-                <v-icon>mdi-twitter</v-icon>
+                <v-icon color="purple-darken-3">mdi-twitter</v-icon>
               </v-btn>
             </v-hover>
 
             <v-hover v-slot:default="{ isHovering, props }">
               <v-btn
                 icon
+                variant="text"
                 color="white"
                 href="mailto:info@motogo.com"
                 v-bind="props"
@@ -530,13 +538,14 @@ const carouselHeight = computed(() => {
                   transition: 'background-color 0.3s ease',
                 }"
               >
-                <v-icon>mdi-email</v-icon>
+                <v-icon color="purple-darken-3">mdi-email</v-icon>
               </v-btn>
             </v-hover>
 
             <v-hover v-slot:default="{ isHovering, props }">
               <v-btn
                 icon
+                variant="text"
                 color="white"
                 href="https://instagram.com"
                 target="_blank"
@@ -548,7 +557,7 @@ const carouselHeight = computed(() => {
                   transition: 'background-color 0.3s ease',
                 }"
               >
-                <v-icon>mdi-instagram</v-icon>
+                <v-icon color="purple-darken-3">mdi-instagram</v-icon>
               </v-btn>
             </v-hover>
           </v-row>
