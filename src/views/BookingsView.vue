@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { LMap, LTileLayer, LMarker, LPopup, LIcon, LPolyline } from '@vue-leaflet/vue-leaflet'
 import { useLocationStore } from '@/stores/locations'
 import { OpenRouteService } from '@/utils/openrouteService'
+import { supabase } from '@/utils/supabase'
 import 'leaflet/dist/leaflet.css'
 
 // Vue location setup
@@ -12,6 +13,8 @@ import { useGeolocation } from '@vueuse/core'
 import L from 'leaflet'
 import DashboardLayout from '@/components/layout/dashboards/DashboardLayout.vue'
 import { useAuthUserStore } from '@/stores/authUser' // Import useAuthUserStore
+import { useMessageStore } from '@/stores/messages' // Import message store
+import { useBookingStore } from '@/stores/bookings' // Import booking store
 
 //location states
 const locationStore = useLocationStore()
@@ -27,7 +30,7 @@ const initMap = () => {
     )
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
+      attribution: ' OpenStreetMap contributors',
     }).addTo(map.value)
   }
 }
@@ -74,6 +77,10 @@ onMounted(async () => {
   } else {
     console.warn('User not logged in. Skipping fetchLocations.')
   }
+
+  // Setup booking subscription
+  bookingStore.subscribeToBookingUpdates()
+  bookingStore.requestNotificationPermission()
 })
 
 // Geolocation hooks
@@ -126,7 +133,8 @@ const zoom = ref(15)
 const center = ref([8.948056, 125.543056]) // Default center (Philippines)
 const loading = ref(false)
 const bookingComplete = ref(false)
-const bookingReference = ref('')
+const messageStore = useMessageStore() // Initialize message store
+const bookingStore = useBookingStore() // Initialize booking store
 
 // Route data
 const routeLoading = ref(false)
@@ -269,17 +277,30 @@ const handleMapClick = (event) => {
   }
 
   // If pickup is not set, set pickup
+  // If pickup is not set, set pickup (IN MEMORY ONLY)
   if (!pickup.value.lat) {
     pickup.value = { lat, lng }
     reverseGeocode(lat, lng).then((address) => {
       bookingForm.value.pickupAddress = address
-      // Store the pickup location in locationStore
-      locationStore.addLocation({
-        latitude_a: lat,
-        longitude_a: lng,
-        latitude_b: null,
-        longitude_b: null,
-      })
+    })
+  }
+  // If pickup is set but dropoff is not, set dropoff AND call addLocation
+  else if (!dropoff.value.lat) {
+    dropoff.value = { lat, lng }
+    reverseGeocode(lat, lng).then((address) => {
+      bookingForm.value.dropoffAddress = address
+      // Now we have both pickup and dropoff, insert to DB
+      locationStore
+        .addLocation({
+          latitude_a: pickup.value.lat,
+          longitude_a: pickup.value.lng,
+          latitude_b: lat,
+          longitude_b: lng,
+        })
+        .then((locationData) => {
+          console.log('Location with pickup and dropoff stored:', locationData)
+          calculateRoute()
+        })
     })
   }
   // If pickup is set but dropoff is not, set dropoff
@@ -287,14 +308,22 @@ const handleMapClick = (event) => {
     dropoff.value = { lat, lng }
     reverseGeocode(lat, lng).then((address) => {
       bookingForm.value.dropoffAddress = address
-      // Store the dropoff location in locationStore
-      locationStore.addLocation({
-        latitude_a: pickup.value.lat,
-        longitude_a: pickup.value.lng,
-        latitude_b: lat,
-        longitude_b: lng,
-      })
-      calculateRoute()
+      // Store the complete location (pickup + dropoff) in locationStore
+      locationStore
+        .addLocation({
+          latitude_a: pickup.value.lat,
+          longitude_a: pickup.value.lng,
+          latitude_b: lat,
+          longitude_b: lng,
+        })
+        .then((locationData) => {
+          console.log('Complete location stored successfully:', locationData)
+          // Only calculate route after location is successfully stored
+          calculateRoute()
+        })
+        .catch((err) => {
+          console.error('Error storing complete location:', err)
+        })
     })
   }
   // If both are set, reset and set pickup
@@ -304,12 +333,19 @@ const handleMapClick = (event) => {
     reverseGeocode(lat, lng).then((address) => {
       bookingForm.value.pickupAddress = address
       // Store the reset pickup location in locationStore
-      locationStore.addLocation({
-        latitude_a: lat,
-        longitude_a: lng,
-        latitude_b: null,
-        longitude_b: null,
-      })
+      locationStore
+        .addLocation({
+          latitude_a: lat,
+          longitude_a: lng,
+          latitude_b: null,
+          longitude_b: null,
+        })
+        .then((locationData) => {
+          console.log('New pickup location stored successfully:', locationData)
+        })
+        .catch((err) => {
+          console.error('Error storing new pickup location:', err)
+        })
     })
     bookingForm.value.dropoffAddress = ''
     bookingForm.value.distance = ''
@@ -438,11 +474,24 @@ const submitBooking = async () => {
   loading.value = true
 
   try {
-    // In a real app, send booking details to your backend
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    // Create a booking using the booking store
+    const bookingDetails = {
+      pickup: pickup.value,
+      pickupAddress: bookingForm.value.pickupAddress,
+      dropoff: dropoff.value,
+      dropoffAddress: bookingForm.value.dropoffAddress,
+      distance: bookingForm.value.distance,
+      price: bookingForm.value.price,
+      notes: bookingForm.value.notes,
+    }
 
-    // Generate a booking reference (in a real app this would come from the backend)
-    bookingReference.value = 'BK' + Math.floor(100000 + Math.random() * 900000)
+    const { data, error } = await bookingStore.createBooking(bookingDetails)
+
+    if (error) {
+      console.error('Booking failed:', error)
+      alert('Failed to create booking: ' + error)
+      return
+    }
 
     // Show success dialog
     bookingComplete.value = true
@@ -476,7 +525,123 @@ const resetForm = () => {
 // Navigate to booking history
 const viewBookingHistory = () => {
   bookingComplete.value = false
-  router.push('/history')
+  router.replace('/history')
+}
+
+// Cancel current booking
+const cancelCurrentBooking = async () => {
+  if (!bookingStore.activeBooking) return
+
+  const confirmed = confirm('Are you sure you want to cancel this booking?')
+  if (!confirmed) return
+
+  const { error } = await bookingStore.cancelBooking(bookingStore.activeBooking.id)
+
+  if (error) {
+    alert('Failed to cancel booking: ' + error)
+    return
+  }
+
+  bookingComplete.value = false
+}
+
+// Set up a channel to listen for booking status changes
+const setupRealTimeStatusUpdates = () => {
+  // Create a channel to listen for status changes
+  const statusChannel = supabase.channel('status-change')
+
+  // Listen for the booking-accepted event
+  statusChannel
+    .on('broadcast', { event: 'booking-accepted' }, (payload) => {
+      console.log('Received booking acceptance:', payload)
+
+      // Update the booking status in the store
+      if (
+        bookingStore.activeBooking &&
+        payload.payload.booking_id === bookingStore.activeBooking.id
+      ) {
+        // Update the active booking with driver information
+        bookingStore.activeBooking = {
+          ...bookingStore.activeBooking,
+          driver_id: payload.payload.driver_id,
+          driver_name: payload.payload.driver_name,
+          status: 'accepted',
+          accepted_at: payload.payload.accepted_at,
+        }
+
+        // Update the booking status
+        bookingStore.bookingStatus = 'accepted'
+
+        // Show notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('MotoGo Booking Update', {
+            body: `Your booking was accepted by ${payload.payload.driver_name}`,
+            icon: '/images/logo.png',
+          })
+        }
+      }
+    })
+    .subscribe()
+
+  // Return the channel for cleanup
+  return statusChannel
+}
+
+// Store the channel reference
+const statusChannel = ref(null)
+
+// Set up the real-time subscription in the onMounted hook
+onMounted(async () => {
+  initMap()
+
+  // Ensure user session is loaded before checking login status
+  const authUserStore = useAuthUserStore()
+  await authUserStore.isAuthenticated()
+
+  if (locationStore.isLoggedIn) {
+    locationStore.fetchLocations()
+  } else {
+    console.warn('User not logged in. Skipping fetchLocations.')
+  }
+
+  // Setup booking subscription
+  bookingStore.subscribeToBookingUpdates()
+  bookingStore.requestNotificationPermission()
+
+  // Set up real-time status updates
+  statusChannel.value = setupRealTimeStatusUpdates()
+})
+
+// Cleanup subscriptions when component unmounts
+onUnmounted(() => {
+  // Unsubscribe from booking updates
+  if (!bookingStore.hasActiveBooking) {
+    bookingStore.unsubscribeFromBookingUpdates()
+  }
+
+  // Unsubscribe from status channel
+  if (statusChannel.value) {
+    supabase.channel(statusChannel.value.topic).unsubscribe()
+    statusChannel.value = null
+  }
+})
+
+// Message the driver
+const messageDriver = async () => {
+  try {
+    if (!bookingStore.activeBooking?.driver_id) {
+      console.error('No driver assigned yet')
+      return
+    }
+
+    // Close the dialog
+    bookingComplete.value = false
+
+    // Navigate to the message view with this driver
+    router.replace(`/messages/${bookingStore.activeBooking.driver_id}`)
+  } catch (err) {
+    console.error('Error setting up messaging:', err)
+  }
 }
 
 // Watch for changes in user location and update center if tracking is enabled
@@ -677,8 +842,7 @@ const carouselHeight = computed(() => {
                   @click="setPickupToCurrentLocation"
                   :disabled="!coords.latitude"
                 >
-                  <v-icon left>mdi-crosshairs-gps</v-icon>
-                  Use Current Location
+                  <v-icon left>mdi-crosshairs-gps</v-icon>/ Use Current Location
                 </v-btn>
 
                 <!-- Drop-off Address with Suggestions -->
@@ -739,17 +903,129 @@ const carouselHeight = computed(() => {
       </v-row>
 
       <!-- Success Dialog -->
-      <v-dialog v-model="bookingComplete" max-width="500">
+      <v-dialog v-model="bookingComplete" max-width="500" persistent>
         <v-card>
-          <v-card-title class="text-h5">Booking Confirmed!</v-card-title>
+          <v-card-title class="text-h5">
+            Booking {{ bookingStore.bookingStatus === 'pending' ? 'Submitted' : 'Confirmed' }}!
+          </v-card-title>
           <v-card-text>
-            Your motorcycle ride has been successfully booked. A rider will be assigned shortly.
-            <v-alert type="info" class="mt-4"> Booking Reference: {{ bookingReference }} </v-alert>
+            <v-alert type="info" class="mt-2">
+              Booking Reference: {{ bookingStore.activeBooking?.booking_reference }}
+            </v-alert>
+
+            <!-- Pending state - waiting for driver to accept -->
+            <div v-if="bookingStore.bookingStatus === 'pending'">
+              <v-alert type="warning" class="mt-2">
+                <div class="text-subtitle-1 font-weight-medium">
+                  Waiting for a driver to accept your ride...
+                </div>
+                <div class="mt-2">This usually takes 1-5 minutes. Please wait.</div>
+                <v-progress-linear indeterminate color="warning" class="mt-2"></v-progress-linear>
+              </v-alert>
+
+              <div v-if="bookingStore.availableDrivers.length > 0" class="mt-4">
+                <div class="text-subtitle-1 font-weight-medium mb-2">
+                  {{ bookingStore.availableDrivers.length }} drivers nearby
+                </div>
+                <v-list lines="two">
+                  <v-list-item v-for="driver in bookingStore.availableDrivers" :key="driver.id">
+                    <template v-slot:prepend>
+                      <v-avatar color="primary">
+                        <span class="text-h6 text-white">{{ driver.name.charAt(0) }}</span>
+                      </v-avatar>
+                    </template>
+                    <v-list-item-title>{{ driver.name }}</v-list-item-title>
+                    <v-list-item-subtitle>
+                      {{ driver.distance }}km away • Rating: {{ driver.rating }}/5
+                    </v-list-item-subtitle>
+                  </v-list-item>
+                </v-list>
+              </div>
+            </div>
+
+            <!-- Accepted state - driver has accepted -->
+            <div v-else-if="bookingStore.bookingStatus === 'accepted'">
+              <v-alert type="success" class="mt-2">
+                <div class="text-subtitle-1 font-weight-medium">
+                  Driver has accepted your ride request!
+                </div>
+                <div class="mt-2">
+                  You can now message your driver to coordinate pickup details.
+                </div>
+              </v-alert>
+
+              <v-card class="mt-4" variant="outlined">
+                <v-card-item>
+                  <template v-slot:prepend>
+                    <v-avatar color="primary" size="large">
+                      <span class="text-h5 text-white">
+                        {{ bookingStore.activeBooking?.driver_name?.charAt(0) || 'D' }}
+                      </span>
+                    </v-avatar>
+                  </template>
+                  <v-card-title>{{
+                    bookingStore.activeBooking?.driver_name || 'Your Driver'
+                  }}</v-card-title>
+                  <v-card-subtitle> Arriving in approximately 5-10 minutes </v-card-subtitle>
+                </v-card-item>
+              </v-card>
+            </div>
+
+            <!-- Rejected state -->
+            <div v-else-if="bookingStore.bookingStatus === 'rejected'">
+              <v-alert type="error" class="mt-2">
+                <div class="text-subtitle-1 font-weight-medium">
+                  No drivers are currently available
+                </div>
+                <div class="mt-2">
+                  We couldn't find a driver for your ride at this time. Please try again in a few
+                  minutes.
+                </div>
+              </v-alert>
+            </div>
+
+            <!-- Cancelled state -->
+            <div v-else-if="bookingStore.bookingStatus === 'cancelled'">
+              <v-alert type="info" class="mt-2">
+                <div class="text-subtitle-1 font-weight-medium">
+                  Your booking has been cancelled
+                </div>
+              </v-alert>
+            </div>
           </v-card-text>
           <v-card-actions>
+            <v-btn
+              v-if="bookingStore.bookingStatus === 'pending'"
+              color="error"
+              variant="text"
+              @click="cancelCurrentBooking"
+            >
+              Cancel Booking
+            </v-btn>
             <v-spacer></v-spacer>
-            <v-btn color="primary" @click="viewBookingHistory">View Booking History</v-btn>
-            <v-btn color="secondary" @click="bookingComplete = false">Close</v-btn>
+            <!-- Only show Message Driver button when a driver has accepted -->
+            <v-btn
+              v-if="bookingStore.bookingStatus === 'accepted'"
+              color="success"
+              prepend-icon="mdi-message-text"
+              @click="messageDriver"
+            >
+              Message Driver
+            </v-btn>
+            <v-btn
+              v-if="['accepted', 'rejected', 'cancelled'].includes(bookingStore.bookingStatus)"
+              color="primary"
+              @click="viewBookingHistory"
+            >
+              View Booking History
+            </v-btn>
+            <v-btn
+              v-if="['rejected', 'cancelled'].includes(bookingStore.bookingStatus)"
+              color="primary"
+              @click="bookingComplete = false"
+            >
+              Close
+            </v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>

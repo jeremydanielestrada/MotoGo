@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import MessageLayout from '@/components/layout/MessageLayout.vue'
-import MessageNavigation from '@/components/layout/navigations/MessageNavigation.vue'
 import avatarImage from '/images/ava.png'
 import { useDisplay } from 'vuetify'
 import { useMessageStore } from '@/stores/message'
@@ -32,16 +31,22 @@ const chatList = computed(() => {
     messageStore.messages.forEach((msg) => {
       // Determine who the other person in the conversation is
       const partnerId = msg.rider_id === currentUserId.value ? msg.passenger_id : msg.rider_id
+      const isRider = msg.rider_id !== currentUserId.value
+
+      // Get the partner's name and image
+      const partnerName = isRider ? msg.rider_name : msg.passenger_name
+
+      // Determine the profile image - use actual image URL if available, fallback to default
+      const profileImage = isRider
+        ? msg.rider_image_url || avatarImage
+        : msg.passenger_image_url || avatarImage
 
       if (!chats[partnerId]) {
         chats[partnerId] = {
           id: partnerId,
-          name:
-            msg.rider_id === currentUserId.value
-              ? msg.passenger_name || 'Passenger'
-              : msg.rider_name || 'Rider',
+          name: partnerName || (isRider ? 'Rider' : 'Passenger'),
           lastMessage: msg.content,
-          ava: avatarImage,
+          ava: profileImage,
           timestamp: msg.created_at,
         }
       } else if (new Date(msg.created_at) > new Date(chats[partnerId].timestamp)) {
@@ -86,6 +91,9 @@ async function sendMessage() {
   })
 
   message.value = ''
+  
+  // Clear typing indicator
+  messageStore.setTypingIndicator(currentChatPartner.value.id, false)
 }
 
 function clearMessage() {
@@ -100,12 +108,84 @@ function handleToggleNavigation(state) {
   drawer.value = state
 }
 
+// Format timestamp for display
+function formatTime(timestamp) {
+  if (!timestamp) return ''
+  
+  const date = new Date(timestamp)
+  const now = new Date()
+  
+  // If the message is from today, show only the time
+  if (date.toDateString() === now.toDateString()) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+  
+  // If the message is from this week, show the day name
+  const daysDiff = Math.floor((now - date) / (1000 * 60 * 60 * 24))
+  if (daysDiff < 7) {
+    return date.toLocaleDateString([], { weekday: 'short' })
+  }
+  
+  // Otherwise show the date
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' })
+}
+
 // Select a chat partner
 function selectChatPartner(partner) {
   currentChatPartner.value = partner
   if (mobile.value) {
     drawer.value = false
   }
+  
+  // Mark messages from this partner as read
+  if (messageStore.unreadMessages[partner.id]) {
+    messageStore.unreadMessages[partner.id].forEach(messageId => {
+      messageStore.markMessageAsRead(messageId)
+    })
+  }
+}
+
+// Mark a message as read
+function markMessageAsRead(messageId) {
+  if (messageId) {
+    messageStore.markMessageAsRead(messageId)
+  }
+}
+
+// Handle typing indicator
+let typingTimeout
+function handleTyping() {
+  if (!currentChatPartner.value) return
+  
+  // Set typing indicator
+  messageStore.setTypingIndicator(currentChatPartner.value.id, true)
+  
+  // Clear previous timeout
+  clearTimeout(typingTimeout)
+  
+  // Set new timeout to clear typing indicator after 1 second of inactivity
+  typingTimeout = setTimeout(() => {
+    if (currentChatPartner.value) {
+      messageStore.setTypingIndicator(currentChatPartner.value.id, false)
+    }
+  }, 1000)
+}
+
+// Get message status icon
+function getStatusIcon(messageId) {
+  const status = messageStore.messageStatus[messageId]
+  switch (status) {
+    case 'sent': return 'mdi-check'
+    case 'delivered': return 'mdi-check-all'
+    case 'read': return 'mdi-check-all'
+    default: return 'mdi-clock-outline'
+  }
+}
+
+// Get message status color
+function getStatusColor(messageId) {
+  const status = messageStore.messageStatus[messageId]
+  return status === 'read' ? 'light-blue' : 'grey-lighten-1'
 }
 
 onMounted(async () => {
@@ -195,11 +275,84 @@ onMounted(async () => {
           </v-card>
         </v-col>
 
-        <MessageNavigation
-          v-model="drawer"
-          :chats="chatList"
-          @select-chat="selectChatPartner"
-        ></MessageNavigation>
+        <!-- Mobile Navigation Drawer -->
+        <v-navigation-drawer v-if="mobile" v-model="drawer" :location="'left'" :width="300">
+          <v-list>
+            <v-list-item class="d-flex justify-space-between pa-4">
+              <h2 class="text-h6">Chats</h2>
+              <v-btn icon @click="drawer = false">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </v-list-item>
+
+            <v-divider></v-divider>
+
+            <v-list-item v-if="chatList.length === 0" class="pa-4 text-center">
+              No conversations yet
+            </v-list-item>
+
+            <v-list-item
+              v-for="(chat, index) in chatList"
+              :key="index"
+              class="pa-2 cursor-pointer"
+              @click="selectChatPartner(chat)"
+              :class="{
+                'bg-purple-lighten-5': currentChatPartner && currentChatPartner.id === chat.id
+              }"
+            >
+              <div class="d-flex align-center w-100">
+                <!-- Contact Avatar -->
+                <div class="position-relative">
+                  <v-avatar size="40" class="mr-3">
+                    <v-img
+                      :src="chat.ava"
+                      :alt="chat.name"
+                      class="rounded-circle"
+                      cover
+                    >
+                      <template v-slot:placeholder>
+                        <div class="d-flex align-center justify-center fill-height bg-grey-lighten-3">
+                          {{ chat.name.charAt(0).toUpperCase() }}
+                        </div>
+                      </template>
+                    </v-img>
+                  </v-avatar>
+                  
+                  <!-- Online indicator -->
+                  <div v-if="messageStore.typingUsers[chat.id]" class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+                
+                <!-- Contact Info -->
+                <div class="title-container flex-grow-1">
+                  <div class="d-flex justify-space-between align-center">
+                    <div class="d-flex align-center">
+                      <div class="text-subtitle-1 font-weight-medium text-truncate">{{ chat.name }}</div>
+                      <!-- Unread message badge -->
+                      <v-badge 
+                        v-if="messageStore.unreadMessages[chat.id] && messageStore.unreadMessages[chat.id].length > 0"
+                        :content="messageStore.unreadMessages[chat.id].length"
+                        color="error"
+                        class="ml-2"
+                      ></v-badge>
+                    </div>
+                    <div class="text-caption text-grey" v-if="chat.timestamp">
+                      {{ formatTime(chat.timestamp) }}
+                    </div>
+                  </div>
+                  <div class="d-flex align-center">
+                    <div class="text-caption text-truncate" style="max-width: 180px">
+                      {{ messageStore.typingUsers[chat.id] ? 'Typing...' : chat.lastMessage }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </v-list-item>
+          </v-list>
+        </v-navigation-drawer>
 
         <!-- CHAT AREA -->
         <v-col cols="12" md="9" class="d-flex flex-column" style="padding: 0; margin: 0">
@@ -245,15 +398,39 @@ onMounted(async () => {
                   : 'align-self-start bg-white text-black',
               ]"
               style="max-width: 70%"
+              @click="markMessageAsRead(msg.id)"
             >
               {{ msg.text }}
-              <div class="message-time text-caption" :class="{ 'text-right': msg.from === 'me' }">
-                {{
-                  new Date(msg.timestamp).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                }}
+              <div class="d-flex justify-space-between align-center message-footer">
+                <div class="message-status" v-if="msg.from === 'me'">
+                  <v-icon 
+                    size="x-small" 
+                    :color="getStatusColor(msg.id)"
+                    class="mr-1"
+                  >
+                    {{ getStatusIcon(msg.id) }}
+                  </v-icon>
+                </div>
+                <div class="message-time text-caption" :class="{ 'ms-auto': msg.from === 'me' }">
+                  {{
+                    new Date(msg.timestamp).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  }}
+                </div>
+              </div>
+            </div>
+            
+            <!-- Typing indicator for the current chat partner -->
+            <div 
+              v-if="currentChatPartner && messageStore.typingUsers[currentChatPartner.id]"
+              class="message-bubble my-2 pa-3 rounded-lg align-self-start bg-white text-black typing-container"
+            >
+              <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
               </div>
             </div>
           </div>
@@ -276,6 +453,7 @@ onMounted(async () => {
               class="flex-grow-1"
               @keyup.enter="sendMessage"
               @click:append="sendMessage"
+              @input="handleTyping"
             />
           </v-sheet>
         </v-col>
@@ -328,5 +506,78 @@ onMounted(async () => {
 
 .message-bubble.bg-white .message-time {
   color: rgba(0, 0, 0, 0.5);
+}
+
+.message-footer {
+  margin-top: 4px;
+  width: 100%;
+}
+
+.message-status {
+  display: flex;
+  align-items: center;
+}
+
+/* Typing indicators */
+.position-relative {
+  position: relative;
+}
+
+.typing-indicator {
+  position: absolute;
+  bottom: -2px;
+  right: 0;
+  background-color: #4CAF50;
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid white;
+}
+
+.typing-container {
+  padding: 10px 16px;
+  max-width: 100px;
+}
+
+.typing-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.typing-dots span {
+  height: 8px;
+  width: 8px;
+  margin: 0 2px;
+  background-color: #9E9E9E;
+  border-radius: 50%;
+  display: inline-block;
+  animation: typing 1.4s infinite ease-in-out both;
+}
+
+.typing-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 80%, 100% { 
+    transform: scale(0.6);
+    opacity: 0.6;
+  }
+  40% { 
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>
