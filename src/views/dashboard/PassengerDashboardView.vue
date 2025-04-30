@@ -8,28 +8,28 @@ const { mobile, mdAndDown } = useDisplay()
 // Enhanced image items with descriptions and discount information
 const imageItems = [
   {
-    image: '/MotoGo/images/promo.png',
+    image: '/images/promo.png',
     title: 'Weekend Special',
     discount: '20% OFF',
     code: 'WEEKEND20',
     expiry: '30 May 2025',
   },
   {
-    image: '/MotoGo/images/promo1.png',
+    image: '/images/promo1.png',
     title: 'New User',
     discount: '50% OFF',
     code: 'NEWUSER50',
     expiry: '15 May 2025',
   },
   {
-    image: '/MotoGo/images/1.png',
+    image: '/images/1.png',
     title: 'Happy Hour',
     discount: '15% OFF',
     code: 'HAPPY15',
     expiry: '20 May 2025',
   },
   {
-    image: '/MotoGo/images/2.png',
+    image: '/images/2.png',
     title: 'Corporate',
     discount: '25% OFF',
     code: 'CORP25',
@@ -40,17 +40,17 @@ const imageItems = [
 // Enhanced carousel slides with more information
 const slides = [
   {
-    image: '/MotoGo/images/c10.png',
+    image: '/images/c10.png',
     title: 'Fast & Reliable Service',
     description: 'Get to your destination on time, every time',
   },
   {
-    image: '/MotoGo/images/c16.png',
+    image: '/images/c16.png',
     title: 'Affordable Rides',
     description: "Quality transportation that won't break the bank",
   },
   {
-    image: '/MotoGo/images/c10.png',
+    image: '/images/c10.png',
     title: 'Safe Journeys',
     description: 'Your safety is our top priority',
   },
@@ -304,7 +304,7 @@ const carouselHeight = computed(() => {
             </v-col>
             <v-col cols="12" md="6" sm="12" class="d-flex justify-center align-center">
               <v-img
-                src="/MotoGo/images/motogoF1.jpg"
+                src="/images/motogoF1.jpg"
                 width="500"
                 class="rounded-lg elevation-3"
                 transition="scale-transition"
@@ -318,7 +318,7 @@ const carouselHeight = computed(() => {
         <v-row class="px-5 py-5 d-flex justify-center align-center">
           <v-col cols="12" md="6" sm="12" class="d-flex justify-center align-center">
             <v-img
-              src="/MotoGo/images/motogoF2.jpg"
+              src="/images/motogoF2.jpg"
               width="500"
               class="rounded-lg elevation-3"
               transition="scale-transition"
@@ -560,7 +560,7 @@ const carouselHeight = computed(() => {
 
 <style scoped>
 .bg-logo {
-  background-image: url('/MotoGo/images/1100000.png');
+  background-image: url('/images/1100000.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;

@@ -295,7 +295,7 @@ onUnmounted(() => {
         >
           <div class="d-flex align-center w-100">
             <v-avatar size="40" class="mr-3">
-              <v-img src="/MotoGo/images/ava.png" alt="Avatar" />
+              <v-img src="/images/ava.png" alt="Avatar" />
             </v-avatar>
             <div class="messenger-chat-info flex-grow-1">
               <div class="d-flex justify-space-between align-center">
@@ -325,7 +325,7 @@ onUnmounted(() => {
               <div class="d-flex align-center justify-space-between w-100">
                 <div class="d-flex align-center">
                   <v-avatar size="40" class="mr-3">
-                    <v-img src="/MotoGo/images/ava.png" alt="Avatar" />
+                    <v-img src="/images/ava.png" alt="Avatar" />
                   </v-avatar>
                   <div>
                     <div class="font-weight-medium">
