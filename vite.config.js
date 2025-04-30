@@ -4,9 +4,8 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
-// https://vite.dev/config/
 export default defineConfig({
-  base: process.env.VERCEL ? '/' : '/',
+  base: '/',
   build: {
     assetsDir: 'assets',
     rollupOptions: {
@@ -19,6 +18,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
+  server: {
+    headers: {
+      'Cache-Control': 'public, max-age=31536000',
     },
   },
 })
