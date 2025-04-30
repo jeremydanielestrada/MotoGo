@@ -641,12 +641,18 @@ const acceptRide = async (ride) => {
 // Reject a ride request
 const rejectRide = async (ride) => {
   try {
+    const channel = supabase.channel('status-change')
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        channel.send({
+          type: 'broadcast',
+          event: 'booking-rejected',
+          payload: { booking_id: ride.id },
+        })
+      }
+    })
+
     console.log('Rejecting ride:', ride)
-
-    // In a real app with the right schema, we would update the database
-    // For this demo, we'll just update the local state
-
-    // Make a copy of the array and filter
     const updatedRequests = [...rideRequests.value].filter((r) => r.id !== ride.id)
     rideRequests.value = updatedRequests
     hasNewRequests.value = updatedRequests.length > 0

@@ -584,6 +584,21 @@ const setupRealTimeStatusUpdates = () => {
         }
       }
     })
+    .on('broadcast', { event: 'booking-rejected' }, (payload) => {
+      if (
+        bookingStore.activeBooking &&
+        payload.payload.booking_id === bookingStore.activeBooking.id
+      ) {
+        bookingStore.bookingStatus = 'rejected'
+        bookingComplete.value = true
+        // Optional browser notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('MotoGo Booking Update', {
+            body: 'Your booking was rejected by the driver',
+          })
+        }
+      }
+    })
     .subscribe()
 
   // Return the channel for cleanup
@@ -936,14 +951,11 @@ const carouselHeight = computed(() => {
                       <v-avatar color="primary">
                         <span class="text-h6 text-white">{{ rider.name.charAt(0) }}</span>
                       </v-avatar>
-                      // unchanged, just for context
                     </template>
-                    <v-list-item-title>{{ rider.name }}</v-list-item-title> // unchanged, just for
-                    context
+                    <v-list-item-title>{{ rider.name }}</v-list-item-title>
                     <v-list-item-subtitle>
                       {{ rider.distance }}km away • Rating: {{ rider.rating }}/5
                     </v-list-item-subtitle>
-                    // unchanged, just for context
                   </v-list-item>
                 </v-list>
               </div>
