@@ -1,171 +1,205 @@
 <script setup>
 import { ref } from 'vue'
+import DriverRegistrationForm from './DriverRegistrationForm.vue'
 import {
-  confirmedValidator,
-  emailValidator,
-  integerValidator,
-  passwordValidator,
   requiredValidator,
+  emailValidator,
+  phoneNumberValidator,
+  passwordValidator,
+  confirmedValidator,
 } from '@/utils/validator'
-import { supabase, formActionDefault } from '@/utils/supabase'
+import { useRegister } from '@/composables/auth/register'
 import AlertNotification from '../common/AlertNotification.vue'
 
-const refVform = ref()
-const visible = ref(false)
+const tab = ref('Passenger')
+const items = ['Passenger', 'Driver']
+const LogIndialog = ref(false)
+const Registerdialog = ref(false)
+const isPasswordVisible = ref(false)
+const isPasswordConfirmVisible = ref(false)
 
-const formDataDefault = {
-  firstName: '',
-  lastName: '',
-  phoneNumber: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-}
-
-const formData = ref({
-  ...formDataDefault,
-})
-
-const formAction = ref({
-  ...formActionDefault,
-})
-
-const onLogin = async () => {
-  console.log('onLogin called')
-  console.log('Submitting form data:', formData.value)
-  formAction.value = { ...formActionDefault }
-  formAction.value.formProcess = true
-
-  const { data, error } = await supabase.auth.signUp({
-    email: formData.value.email,
-    password: formData.value.password,
-    options: {
-      data: {
-        firstName: formData.value.firstName,
-        lastName: formData.value.lastName,
-        phoneNumber: formData.value.phoneNumber,
-      },
-    },
-  })
-  if (error) {
-    console.log(error)
-    formAction.value.formErrorMessage = error.message
-    formAction.value.formStatus = error.status
-  } else if (data) {
-    console.log(data)
-    formAction.value.formSuccessMessage = 'Successfully registered'
-    formAction.value.formStatus = data.status
-    refVform.value?.reset()
-  }
-
-  formAction.value.formProcess = false
-}
-
-const onSubmit = () => {
-  refVform.value?.validate().then(({ valid }) => {
-    console.log('Form valid:', valid)
-    if (valid) {
-      onLogin()
-    }
-  })
-}
+const { formData, formAction, refVForm, onFormSubmit } = useRegister()
 </script>
 
 <template>
-  <AlertNotification
-    :form-success-message="formAction.formSuccessMessage"
-    :form-error-message="formAction.formErrorMessage"
-  >
-  </AlertNotification>
+  <v-row>
+    <v-col cols="12">
+      <div class="pa-4 text-center">
+        <v-dialog v-model="Registerdialog" max-width="600">
+          <template v-slot:activator="{ props: activatorProps }">
+            <v-btn
+              class="text-none font-weight-bold button-btn"
+              color="purple-darken-2"
+              width="150px"
+              v-bind="activatorProps"
+            >
+              Register
+            </v-btn>
+          </template>
 
-  <v-form ref="refVform" class="mt-5" fast-fail @submit.prevent="onSubmit">
-    <v-row>
-      <v-col cols="12" md="6">
-        <v-text-field
-          label="First Name"
-          type="text"
-          variant="outlined"
-          v-model="formData.firstName"
-          :rules="[requiredValidator]"
-        ></v-text-field>
-      </v-col>
+          <v-card class="card-container" rounded="xl">
+            <v-row>
+              <v-col cols="12" class="d-flex justify-center pb-5 pt-5 name-log">
+                <h1><v-icon>mdi-account-plus</v-icon>Register</h1>
+              </v-col>
+            </v-row>
+            <v-divider></v-divider>
+            <v-card-text elevate="9">
+              <v-row>
+                <v-col>
+                  <div>
+                    <!-- Tabs -->
+                    <v-tabs v-model="tab" grow>
+                      <v-tab v-for="item in items" :key="item" :value="item">{{ item }}</v-tab>
+                    </v-tabs>
 
-      <v-col cols="12" md="6">
-        <v-text-field
-          label="Last Name"
-          type="text"
-          variant="outlined"
-          v-model="formData.lastName"
-          :rules="[requiredValidator]"
-        ></v-text-field>
-      </v-col>
+                    <!-- Tab Content -->
+                    <v-tabs-window v-model="tab">
+                      <!-- Appetizers Content -->
+                      <v-tabs-window-item value="Passenger">
+                        <div flat>
+                          <v-card-text>
+                            <AlertNotification
+                              :form-success-message="formAction.formSuccessMessage"
+                              :form-error-message="formAction.formErrorMessage"
+                            ></AlertNotification>
 
-      <v-col cols="12" md="12">
-        <v-text-field
-          label="Phone Number"
-          type="phone"
-          prepend-inner-icon="mdi-phone"
-          variant="outlined"
-          v-model="formData.phoneNumber"
-          :rules="[requiredValidator, integerValidator]"
-        ></v-text-field>
-      </v-col>
+                            <v-form ref="refVForm" fast-fail @submit.prevent="onFormSubmit">
+                              <v-text-field
+                                v-model="formData.firstname"
+                                class="font-weight-bold"
+                                label="First Name"
+                                type="text"
+                                variant="outlined"
+                                :rules="[requiredValidator]"
+                              ></v-text-field>
 
-      <v-col cols="12" md="12">
-        <v-text-field
-          label="Email"
-          type="email"
-          variant="outlined"
-          v-model="formData.email"
-          :rules="[requiredValidator, emailValidator]"
-        ></v-text-field>
-      </v-col>
+                              <v-text-field
+                                v-model="formData.lastname"
+                                class="font-weight-bold"
+                                label="Last Name"
+                                type="text"
+                                variant="outlined"
+                                :rules="[requiredValidator]"
+                              ></v-text-field>
 
-      <v-col cols="12" md="6">
-        <v-text-field
-          label="Password"
-          type="password"
-          variant="outlined"
-          prepend-inner-icon="mdi-lock-outline"
-          v-model="formData.password"
-          :rules="[requiredValidator, passwordValidator]"
-        ></v-text-field>
-      </v-col>
-      <v-col cols="12" md="6">
-        <v-text-field
-          label="Confirm Password"
-          :type="visible ? 'text' : 'password'"
-          variant="outlined"
-          prepend-inner-icon="mdi-lock-outline"
-          v-model="formData.confirmPassword"
-          :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
-          @click:append-inner="visible = !visible"
-          :rules="[
-            requiredValidator,
-            confirmedValidator(formData.confirmPassword, formData.password),
-          ]"
-        ></v-text-field>
-      </v-col>
-      <v-col align="center" justify="center">
-        <v-hover v-slot="{ isHovering, props }">
-          <v-btn
-            v-bind="props"
-            :color="isHovering ? 'purple-darken-1' : undefined"
-            class="mt-2 submit-button"
-            type="submit"
-            ripple
-            :disabled="formAction.formProcess"
-            :loading="formAction.formProcess"
-            >Submit</v-btn
-          >
-        </v-hover>
-      </v-col>
-    </v-row>
-  </v-form>
+                              <v-text-field
+                                v-model="formData.phone"
+                                class="font-weight-bold"
+                                prepend-inner-icon="mdi-phone-outline"
+                                label="Phone Number"
+                                variant="outlined"
+                                :rules="[requiredValidator, phoneNumberValidator]"
+                              ></v-text-field>
+
+                              <v-text-field
+                                v-model="formData.email"
+                                class="font-weight-bold"
+                                prepend-inner-icon="mdi-email-outline"
+                                label="Email"
+                                variant="outlined"
+                                :rules="[requiredValidator, emailValidator]"
+                              ></v-text-field>
+
+                              <v-text-field
+                                v-model="formData.password"
+                                class="font-weight-bold"
+                                label="Password"
+                                prepend-inner-icon="mdi-lock-outline"
+                                :type="isPasswordVisible ? 'text' : 'password'"
+                                :append-inner-icon="isPasswordVisible ? 'mdi-eye-off' : 'mdi-eye'"
+                                @click:append-inner="isPasswordVisible = !isPasswordVisible"
+                                variant="outlined"
+                                :rules="[requiredValidator, passwordValidator]"
+                              ></v-text-field>
+
+                              <v-text-field
+                                v-model="formData.password_confirmation"
+                                class="font-weight-bold"
+                                label="Confirm Password"
+                                prepend-inner-icon="mdi-lock-outline"
+                                variant="outlined"
+                                :type="isPasswordConfirmVisible ? 'text' : 'password'"
+                                :append-inner-icon="
+                                  isPasswordConfirmVisible ? 'mdi-eye-off' : 'mdi-eye'
+                                "
+                                @click:append-inner="
+                                  isPasswordConfirmVisible = !isPasswordConfirmVisible
+                                "
+                                :rules="[
+                                  requiredValidator,
+                                  confirmedValidator(
+                                    formData.password,
+                                    formData.password_confirmation,
+                                  ),
+                                ]"
+                              ></v-text-field>
+
+                              <v-btn
+                                color="purple-darken-1"
+                                text="REGISTER"
+                                @click="Registerdialog = false"
+                                block
+                                type="submit"
+                              >
+                              </v-btn>
+                            </v-form>
+                          </v-card-text>
+                        </div>
+                      </v-tabs-window-item>
+
+                      <!-- Entrees Content -->
+                      <v-tabs-window-item value="Driver">
+                        <div flat>
+                          <v-card-text>
+                            <DriverRegistrationForm></DriverRegistrationForm>
+                          </v-card-text>
+                        </div>
+                      </v-tabs-window-item>
+                    </v-tabs-window>
+                  </div>
+                </v-col>
+              </v-row>
+            </v-card-text>
+
+            <v-divider></v-divider>
+
+            <v-card-actions class="d-flex justify-center">
+              <v-btn text="Close" variant="plain" @click="Registerdialog = false">Close</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+      </div>
+    </v-col>
+  </v-row>
 </template>
 
 <style scoped>
-.submit-button {
-  background-color: #e1bee7;
+.title-name {
+  font-size: 4.5rem;
+  color: #8e24aa;
+}
+.name-log {
+  font-size: 1.5rem;
+  color: purple;
+}
+.background-img {
+  border-radius: 8px;
+}
+.card-container {
+  width: 100%;
+  padding: 50px 30px;
+  background-color: rgba(255, 251, 254, 0.4);
+  border: 2px solid rgb(245, 20, 207, 0.1);
+  border-radius: 10px;
+  box-shadow: 10px 20px 30px rgb(252, 246, 252);
+  backdrop-filter: blur(10px);
+}
+
+.text-white {
+  border-color: #8e24aa;
+}
+.butn-btn {
+  background-color: #d500f9;
 }
 </style>
