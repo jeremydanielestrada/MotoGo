@@ -228,7 +228,12 @@ const fetchExistingRequests = async () => {
 
       // Process each booking to add required fields for display
       // Filter out already accepted rides
-      const filteredData = data.filter((request) => !acceptedRideIds.value.includes(request.id))
+
+      const filteredData = data.filter(
+        (request) =>
+          !acceptedRideIds.value.includes(request.id) &&
+          !rejectedRideIds.value.includes(request.id),
+      )
 
       // Process bookings in parallel with location lookups
       const processRequestsWithLocations = async () => {
@@ -377,6 +382,13 @@ const subscribeToRideRequests = async () => {
       { event: 'INSERT', schema: 'public', table: 'bookings' },
       async (payload) => {
         try {
+          if (
+            acceptedRideIds.value.includes(payload.new.id) ||
+            rejectedRideIds.value.includes(payload.new.id)
+          ) {
+            return // Skip processing if already accepted/rejected
+          }
+
           const newRequest = payload.new
           console.log('New booking received:', newRequest) // Log to see its structure
 
@@ -638,9 +650,32 @@ const acceptRide = async (ride) => {
   }
 }
 
+const rejectedRideIds = ref([])
+
+// Load rejected IDs on mount
+const loadRejectedRideIds = () => {
+  try {
+    const storedIds = localStorage.getItem('motogo_rejected_ride_ids')
+    if (storedIds) rejectedRideIds.value = JSON.parse(storedIds)
+  } catch (err) {
+    console.error('Error loading rejected ride IDs:', err)
+  }
+}
+
+onMounted(() => {
+  loadRejectedRideIds()
+})
+
 // Reject a ride request
 const rejectRide = async (ride) => {
   try {
+    // Add to rejected ride IDs
+    if (!rejectedRideIds.value.includes(ride.id)) {
+      rejectedRideIds.value.push(ride.id)
+      localStorage.setItem('motogo_rejected_ride_ids', JSON.stringify(rejectedRideIds.value))
+    }
+
+    // Broadcast and filter as before
     const channel = supabase.channel('status-change')
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
