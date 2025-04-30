@@ -67,7 +67,7 @@ const isActive = (path) => route.path === path
           class="d-flex justify-start align-center"
         >
           <div>
-            <img class="pt-4" src="/public/images/motoGO.png" alt="MotoGo Logo" width="40px" />
+            <img class="pt-4" src="/MotoGo/images/motoGO.png" alt="MotoGo Logo" width="40px" />
           </div>
           <h1 class="text-italic text-purple-darken-3">MotoGo</h1>
         </v-col>

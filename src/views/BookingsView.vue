@@ -105,17 +105,17 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 
 const slides = [
   {
-    image: '/public/images/c10.png',
+    image: '/MotoGo/images/c10.png',
     title: 'Fast & Reliable Service',
     description: 'Get to your destination on time, every time',
   },
   {
-    image: '/public/images/c16.png',
+    image: '/MotoGo/images/c16.png',
     title: 'Affordable Rides',
     description: "Quality transportation that won't break the bank",
   },
   {
-    image: '/public/images/c10.png',
+    image: '/MotoGo/images/c10.png',
     title: 'Safe Journeys',
     description: 'Your safety is our top priority',
   },
