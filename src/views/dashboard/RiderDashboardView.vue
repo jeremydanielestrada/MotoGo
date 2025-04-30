@@ -8,9 +8,8 @@ import axios from 'axios'
 
 // Map setup
 const map = ref(null)
-const center = ref([12.8797, 121.774]) // Default center (Philippines)
-const zoom = ref(6)
-
+const center = ref([8.948056, 125.543056])
+const zoom = ref(15)
 // Route details
 const routeDistance = ref(0)
 const routeDuration = ref(0)

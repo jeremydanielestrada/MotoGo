@@ -5,6 +5,7 @@ import { getuserInformation } from '@/utils/supabase'
 import { watch } from 'vue'
 import { useAuthUserStore } from '@/stores/authUser'
 import { supabase } from '@/utils/supabase'
+import { useBookingStore } from '@/stores/bookings'
 const uploadImg = useAuthUserStore()
 
 const loadingUser = ref(true)
@@ -19,6 +20,24 @@ const userData = ref({
   image_url: '',
 })
 const userRole = ref(null)
+
+
+const bookingStore = useBookingStore()
+const userRating = ref(0)
+// const userRating = computed(() => bookingStore.averageRating)
+
+onMounted(async () => {
+  const authUserStore = useAuthUserStore()
+  await authUserStore.isAuthenticated()
+  
+  if (authUserStore.userData?.id) {
+    const ratings = await bookingStore.fetchRiderRatings(authUserStore.userData.id)
+    userRating.value = ratings.length ? 
+      (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : 
+      0
+  }
+}
+)
 
 
 // const onFileChange = async (event) => {
@@ -190,7 +209,6 @@ watch(phoneNumber, (newVal) => {
   localStorage.setItem('phoneNumber', newVal)
 })
 // RATING
-const rating = ref(3.5)
 
 // PROFILE PHOTO CHANGER
 const fallbackImage = ref('/images/ava.png')
@@ -329,16 +347,15 @@ const fallbackImage = ref('/images/ava.png')
               <h3 class="title-rating">Ratings:</h3>
 
               <h3 class="pl-2">
-                {{ rating }}
               </h3>
               <v-divider class="mx-3" vertical></v-divider>
               <v-rating
                 size="25"
-                v-model="rating"
+               :model-value="userRating"
                 active-color="purple"
                 color="purple lighten-4"
-                half-increments
                 hover
+                readonly
               ></v-rating>
             </div>
           </v-card>

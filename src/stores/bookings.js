@@ -255,6 +255,29 @@ export const useBookingStore = defineStore('bookings', () => {
       id: booking.id,
     })
   }
+  const averagerating = computed(() => {
+    if (!locationsfromApi.value.leng) return 0
+    const ratings = locationsfromApi.value
+      .filter((booking) => booking.rating)
+      .map((booking) => booking.rating)
+    return ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : 0
+  })
+
+  async function fetchRiderRatings(riderId) {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('rating')
+        .eq('rider_id', riderId)
+        .not('rating', 'is', null)
+
+      if (error) throw error
+      return data.map((item) => item.rating)
+    } catch (err) {
+      console.error('Error fetching ratings:', err)
+      return []
+    }
+  }
 
   // Retrieve all bookings from Supabase
   async function getBooks() {
@@ -323,66 +346,6 @@ export const useBookingStore = defineStore('bookings', () => {
     return locationsfromApi.value
   }
 
-  // Cancel a booking
-  async function cancelBooking(bookingId) {
-    try {
-      // In a real app with the right schema, we would update the database
-      // For this demo, we'll just update the local state
-
-      if (activeBooking.value && activeBooking.value.id === bookingId) {
-        activeBooking.value = {
-          ...activeBooking.value,
-          status: 'cancelled',
-          cancelled_at: new Date().toISOString(),
-        }
-
-        bookingStatus.value = 'cancelled'
-
-        // Create notification
-        bookingNotifications.value.unshift({
-          id: bookingId,
-          message: 'Your booking was cancelled',
-          timestamp: new Date().toLocaleString(),
-          booking: activeBooking.value,
-        })
-      }
-
-      return { data: activeBooking.value }
-    } catch (err) {
-      console.error('Unexpected error cancelling booking:', err)
-      return { error: 'Unexpected error occurred' }
-    }
-  }
-
-  // Complete a booking
-  async function completeBooking(bookingId) {
-    try {
-      const { data, error } = await supabase
-        .from('bookings')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', bookingId)
-        .select()
-
-      if (error) {
-        console.error('Error completing booking:', error)
-        return { error }
-      }
-
-      if (activeBooking.value && activeBooking.value.id === bookingId) {
-        bookingStatus.value = 'completed'
-        activeBooking.value = null
-      }
-
-      return { data }
-    } catch (err) {
-      console.error('Unexpected error completing booking:', err)
-      return { error: 'Unexpected error occurred' }
-    }
-  }
-
   return {
     // State
     locationsfromApi,
@@ -395,6 +358,7 @@ export const useBookingStore = defineStore('bookings', () => {
     availableDrivers,
 
     // Computed
+    averagerating,
     currentBookingStatus,
     hasActiveBooking,
 
@@ -402,9 +366,8 @@ export const useBookingStore = defineStore('bookings', () => {
     getBooks,
     getLocation,
     createBooking,
-    cancelBooking,
-    completeBooking,
     rateRider,
+    fetchRiderRatings,
 
     // Subscriptions
     subscribeToBookingUpdates,
