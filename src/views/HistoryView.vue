@@ -33,7 +33,7 @@ async function submitRating(bookingId) {
     <v-row class="align-center justify-space-between">
       <v-col cols="auto" class="d-flex align-center">
         <v-btn variant="text" class="text-purple-darken-3" to="/system/passenger-dashboard">
-          <v-icon>mdi-keyboard-backspace</v-icon>
+          <v-icon size="30">mdi-keyboard-backspace</v-icon>
           <span class="d-none d-sm-inline">Back to home</span>
         </v-btn>
       </v-col>
