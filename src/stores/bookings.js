@@ -392,6 +392,7 @@ export const useBookingStore = defineStore('bookings', () => {
     averagerating,
     currentBookingStatus,
     hasActiveBooking,
+    cancelBooking,
 
     // Actions
     getBooks,
