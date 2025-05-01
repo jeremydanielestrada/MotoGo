@@ -54,30 +54,31 @@ function handleToggleNavigation(state) {
 </script>
 
 <template>
-
   <v-app>
-    
     <v-app-bar color="white">
+      <!-- Use the computed dashboardPath -->
+      <v-btn class="text-purple-darken-3" :to="dashboardPath" v-if="$vuetify.display.mdAndUp">
+        <v-icon> mdi-keyboard-backspace </v-icon>
+        Back to Dashboard
+      </v-btn>
       <template v-slot:append>
         <v-icon v-show="smAndDown" @click="toggleDrawer" class="me-4" size="30"
-          >mdi-message-outline</v-icon>
-       
+          >mdi-message-outline</v-icon
+        >
       </template>
-      </v-app-bar>
+    </v-app-bar>
 
-      <!-- Use the computed dashboardPath -->
-      <v-btn class="text-purple-darken-3" :to="dashboardPath" v-if="mdAndUp">
-        </v-btn
+    <!-- Use the computed dashboardPath -->
+    <v-btn class="text-purple-darken-3" :to="dashboardPath" v-if="mdAndUp"> </v-btn>
 
-    <v-layout>
     <v-app-bar color="purple-darken-3">
       <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
 
       <!-- Use the computed dashboardPath -->
-      <v-btn :to="dashboardPath" v-if="$vuetify.display.mdAndUp">
+      <!-- <v-btn :to="dashboardPath" v-if="$vuetify.display.mdAndUp">
         <v-icon> mdi-keyboard-backspace </v-icon>
         Back to Dashboard
-      </v-btn>
+      </v-btn> -->
 
       <v-btn :to="dashboardPath" v-if="!$vuetify.display.mdAndUp">
         <v-icon class="ms-4" size="30">mdi-keyboard-backspace</v-icon>
@@ -98,7 +99,7 @@ function handleToggleNavigation(state) {
     <v-main>
       <slot name="content" :drawer="drawer" :onToggleNavigation="handleToggleNavigation" />
     </v-main>
-</v-app>
+  </v-app>
 </template>
 
 <style>

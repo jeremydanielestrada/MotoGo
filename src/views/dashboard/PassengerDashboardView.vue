@@ -129,7 +129,7 @@ const carouselHeight = computed(() => {
             cycle
             hide-delimiter-background
             interval="5000"
-            progress="purple-lighten-2"
+            progress="purple-darken-3"
           >
             <v-carousel-item v-for="(slide, i) in slides" :key="i" :src="slide.image" cover>
               <div class="carousel-gradient d-flex flex-column justify-end align-start pa-6">

@@ -201,19 +201,12 @@ const fallbackImage = ref('/images/ava.png')
   <v-card class="profile-card rounded-0" flat>
     <!-- Cover Photo -->
     <v-card>
-      <div class="background-pic" elevation="5">
-        <v-img src="coverPhoto" height="200px" class="bg-purple-lighten-4">
-          <v-btn :to="dashboardPath" text class="ma-2">
+      <div class="background-pic">
+        <v-img src="coverPhoto" height="200px" class="bg-purple-lighten-2">
+          <v-btn :to="dashboardPath" text class="ma-2" variant="text">
             <v-icon>mdi-keyboard-backspace</v-icon>
             back
           </v-btn>
-          <input
-            type="file"
-            ref="coverInput"
-            accept="image/*"
-            class="d-none"
-            @change="onCoverChange"
-          />
         </v-img>
       </div>
     </v-card>
@@ -417,10 +410,6 @@ const fallbackImage = ref('/images/ava.png')
   border-radius: 50%;
 }
 
-.background-pic {
-  /* border: 2px solid whitesmoke; */
-  border-bottom-right-radius: 30px;
-}
 .card-details {
   padding: 20px;
 }
