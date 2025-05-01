@@ -5,7 +5,6 @@ import axios from 'axios'
 import { LMap, LTileLayer, LMarker, LPopup, LIcon, LPolyline } from '@vue-leaflet/vue-leaflet'
 import { useLocationStore } from '@/stores/locations'
 import { OpenRouteService } from '@/utils/openrouteservice'
-import { OpenRouteService } from '@/utils/openrouteservice'
 import { supabase } from '@/utils/supabase'
 import 'leaflet/dist/leaflet.css'
 
@@ -735,7 +734,7 @@ const carouselHeight = computed(() => {
             cycle
             hide-delimiter-background
             interval="5000"
-            progress="primary"
+            progress="purple-lighten-2"
           >
             <v-carousel-item v-for="(slide, i) in slides" :key="i" :src="slide.image" cover>
               <div class="carousel-gradient d-flex flex-column justify-end align-start pa-6">

@@ -202,11 +202,6 @@ const fallbackImage = ref('/images/ava.png')
     <!-- Cover Photo -->
     <v-card>
       <div class="background-pic" elevation="5">
-        <v-img height="200px" class="bg-purple-lighten-2">
-          <router-link to="/system/passenger-dashboard">
-            <v-icon color="white" size="30" class="ml-4 mt-2">mdi-keyboard-backspace</v-icon>
-          </router-link>
-        </v-img>
         <v-img src="coverPhoto" height="200px" class="bg-purple-lighten-4">
           <v-btn :to="dashboardPath" text class="ma-2">
             <v-icon>mdi-keyboard-backspace</v-icon>
