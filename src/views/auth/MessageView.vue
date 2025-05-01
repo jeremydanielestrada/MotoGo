@@ -221,6 +221,10 @@ function handleTyping() {
     }
   }, 1000)
 }
+const drawer = ref(false)
+watch(drawer, (newValue) => {
+  emit('toggle-navigation', newValue)
+})
 
 onMounted(async () => {
   // Ensure user is authenticated and userData is loaded
@@ -274,10 +278,20 @@ onUnmounted(() => {
     <template #drawer-content>
       <v-list class="messenger-chat-list pa-0">
         <v-list-item class="d-flex justify-space-between pa-4 messenger-header">
-          <h2 class="text-h6 font-weight-bold">Chats</h2>
-          <v-btn icon variant="text" @click="refreshMessages" :loading="messageStore.isLoading">
-            <v-icon>mdi-refresh</v-icon>
-          </v-btn>
+          <div>
+            <h2 class="text-h6 font-weight-bold title-chat">
+              Chats
+              <v-btn
+                icon
+                variant="text"
+                @click="refreshMessages"
+                :loading="messageStore.isLoading"
+                class="text-end"
+              >
+                <v-icon>mdi-refresh</v-icon>
+              </v-btn>
+            </h2>
+          </div>
         </v-list-item>
 
         <v-divider></v-divider>
@@ -420,7 +434,7 @@ onUnmounted(() => {
                 @keyup.enter.prevent="sendMessage"
               ></v-textarea>
               <v-btn
-                color="primary"
+                color="purple-darken-3"
                 icon
                 class="messenger-send-btn"
                 :disabled="!message.trim()"
@@ -477,7 +491,9 @@ onUnmounted(() => {
 .messenger-active-chat {
   background-color: #e7f3ff !important;
 }
-
+.title-chat {
+  color: #6a1b9a;
+}
 .messenger-chat-name {
   font-size: 15px;
   color: #050505;
@@ -569,7 +585,7 @@ onUnmounted(() => {
 }
 
 .messenger-outgoing .messenger-bubble {
-  background-color: #0084ff;
+  background-color: #6a1b9a;
   color: white;
   border-top-right-radius: 4px;
 }
