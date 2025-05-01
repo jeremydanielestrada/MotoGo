@@ -316,6 +316,37 @@ export const useBookingStore = defineStore('bookings', () => {
     }
   }
 
+  // Cancel an existing booking
+  async function cancelBooking(bookingId) {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      // Get current user
+      if (!authUser.userData?.id) {
+        await authUser.isAuthenticated()
+      }
+
+      const userId = authUser.userData?.id
+      if (!userId) {
+        error.value = 'User not authenticated'
+        return { error: error.value }
+      }
+
+      // Update local state
+      bookingStatus.value = 'cancelled'
+      activeBooking.value = null
+
+      return { data: { id: bookingId, status: 'cancelled' } }
+    } catch (err) {
+      console.error('Unexpected error cancelling booking:', err)
+      error.value = 'Unexpected error occurred'
+      return { error: error.value }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   // Get current booking status
   const currentBookingStatus = computed(() => {
     return bookingStatus.value

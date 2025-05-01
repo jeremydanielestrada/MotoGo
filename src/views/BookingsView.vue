@@ -536,9 +536,6 @@ const viewBookingHistory = () => {
 const cancelCurrentBooking = async () => {
   if (!bookingStore.activeBooking) return
 
-  // const confirmed = confirm('Are you sure you want to cancel this booking?')
-  if (!confirmed) return
-
   const { error } = await bookingStore.cancelBooking(bookingStore.activeBooking.id)
 
   if (error) {
