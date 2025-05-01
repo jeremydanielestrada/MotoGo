@@ -734,7 +734,7 @@ const carouselHeight = computed(() => {
             cycle
             hide-delimiter-background
             interval="5000"
-            progress="primary"
+            progress="purple-lighten-2"
           >
             <v-carousel-item v-for="(slide, i) in slides" :key="i" :src="slide.image" cover>
               <div class="carousel-gradient d-flex flex-column justify-end align-start pa-6">
@@ -758,7 +758,7 @@ const carouselHeight = computed(() => {
             </v-card-subtitle>
             <v-card-text>
               <div class="d-flex mb-2">
-                <v-btn color="primary" class="mr-2" @click="centerOnUserLocation">
+                <v-btn color="purple-lighten-2" class="mr-2" @click="centerOnUserLocation">
                   <v-icon left>mdi-crosshairs-gps</v-icon>
                   Find Me
                 </v-btn>
@@ -854,7 +854,7 @@ const carouselHeight = computed(() => {
 
                 <!-- Button to set current location as pickup -->
                 <v-btn
-                  color="primary"
+                  color="purple-darken-3"
                   class="mb-4"
                   block
                   @click="setPickupToCurrentLocation"
@@ -911,7 +911,13 @@ const carouselHeight = computed(() => {
                   class="mb-4"
                 ></v-textarea>
 
-                <v-btn type="submit" color="primary" block :disabled="!canBook" :loading="loading">
+                <v-btn
+                  type="submit"
+                  color="purple-darken-3"
+                  block
+                  :disabled="!canBook"
+                  :loading="loading"
+                >
                   Book Now
                 </v-btn>
               </v-form>

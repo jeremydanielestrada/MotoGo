@@ -43,16 +43,16 @@ const isActive = (path) => route.path === path
           :class="{ 'active-btn': isActive('/system/passenger-dashboard') }"
           to="/system/passenger-dashboard"
         >
-          <v-icon>mdi-home</v-icon>
-          Home
+          <v-icon class="title-home">mdi-home</v-icon>
+          <span class="title-home">Home</span>
         </v-btn>
         <v-btn :class="{ 'active-btn': isActive('/bookings') }" to="/bookings">
-          <v-icon>mdi-motorbike</v-icon>
-          Booking
+          <v-icon class="title-home">mdi-motorbike</v-icon>
+          <span class="title-home">Booking</span>
         </v-btn>
         <v-btn :class="{ 'active-btn': isActive('/message') }" to="/message">
-          <v-icon>mdi-chat-outline</v-icon>
-          Message
+          <v-icon class="title-home">mdi-chat-outline</v-icon>
+          <span class="title-home">Message</span>
         </v-btn>
         <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>
       </v-bottom-navigation>
@@ -122,16 +122,16 @@ const isActive = (path) => route.path === path
             :class="{ 'active-btn': isActive('/system/passenger-dashboard') }"
             to="/system/passenger-dashboard"
           >
-            <v-icon>mdi-home</v-icon>
-            Home
+            <v-icon class="title-home">mdi-home</v-icon>
+            <span class="title-home">Home</span>
           </v-btn>
           <v-btn :class="{ 'active-btn': isActive('/bookings') }" to="/bookings">
-            <v-icon>mdi-motorbike</v-icon>
-            Booking
+            <v-icon class="title-home">mdi-motorbike</v-icon>
+            <span class="title-home">Booking</span>
           </v-btn>
           <v-btn :class="{ 'active-btn': isActive('/message') }" to="/message">
-            <v-icon>mdi-chat-outline</v-icon>
-            Message
+            <v-icon class="title-home">mdi-chat-outline</v-icon>
+            <span class="title-home">Message</span>
           </v-btn>
           <ProfileNavigation v-if="isLoggedIn"></ProfileNavigation>
         </v-col>
@@ -147,6 +147,14 @@ const isActive = (path) => route.path === path
 
 <style scoped>
 .active-btn {
-  background-color: #e1bee7;
+  border-bottom: 3px solid #6a1b9a;
+  color: white;
+  width: auto;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.title-home {
+  color: black;
+  /* border-bottom: 2px solid #6a1b9a; */
 }
 </style>
