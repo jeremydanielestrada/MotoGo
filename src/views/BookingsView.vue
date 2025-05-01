@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { LMap, LTileLayer, LMarker, LPopup, LIcon, LPolyline } from '@vue-leaflet/vue-leaflet'
 import { useLocationStore } from '@/stores/locations'
-import { OpenRouteService } from '@/utils/openrouteService'
+import { OpenRouteService } from '@/utils/openrouteservice'
 import { supabase } from '@/utils/supabase'
 import 'leaflet/dist/leaflet.css'
 
