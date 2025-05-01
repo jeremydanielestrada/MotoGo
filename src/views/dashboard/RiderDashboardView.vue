@@ -96,6 +96,30 @@ const displayAlert = (message, type = 'success', duration = 3000) => {
   }, duration)
 }
 
+onMounted(() => {
+  // Add event listeners for user interaction
+  const handleUserInteraction = () => {
+    document.documentElement.setAttribute('data-user-interacted', 'true')
+  }
+
+  // Add listeners for different types of user interaction
+  document.addEventListener('click', handleUserInteraction)
+  document.addEventListener('touchstart', handleUserInteraction)
+  document.addEventListener('keydown', handleUserInteraction)
+
+  // Clean up listeners on unmount
+  onUnmounted(() => {
+    document.removeEventListener('click', handleUserInteraction)
+    document.removeEventListener('touchstart', handleUserInteraction)
+    document.removeEventListener('keydown', handleUserInteraction)
+  })
+
+  // Load ride IDs
+  loadRejectedRideIds()
+  loadAcceptedRideIds()
+  subscribeToRideRequests()
+})
+
 // Load accepted ride IDs from local storage on component creation
 const loadAcceptedRideIds = () => {
   try {
@@ -210,6 +234,7 @@ const fetchExistingRequests = async () => {
 
     // Load accepted ride IDs from local storage
     loadAcceptedRideIds()
+    loadRejectedRideIds()
 
     if (error) {
       console.error('Error fetching ride requests:', error)
@@ -221,9 +246,9 @@ const fetchExistingRequests = async () => {
       console.log('Raw booking data:', JSON.stringify(data[0], null, 2))
 
       // Check for location_id field and location field
-      console.log('Has location_id?', data[0].hasOwnProperty('location_id'))
-      console.log('Has pickup_address?', data[0].hasOwnProperty('pickup_address'))
-      console.log('Has dropoff_address?', data[0].hasOwnProperty('dropoff_address'))
+      // console.log('Has location_id?', data[0].hasOwnProperty('location_id'))
+      // console.log('Has pickup_address?', data[0].hasOwnProperty('pickup_address'))
+      // console.log('Has dropoff_address?', data[0].hasOwnProperty('dropoff_address'))
 
       // Process each booking to add required fields for display
       // Filter out already accepted rides
@@ -549,6 +574,10 @@ const acceptRide = async (ride) => {
       console.error('User not authenticated')
       displayAlert('User not authenticated', 'error')
       return
+    }
+
+    if (!acceptedRideIds.value.includes(ride.id)) {
+      saveAcceptedRideIds()
     }
 
     console.log('Accepting ride:', ride)
