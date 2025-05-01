@@ -21,7 +21,6 @@ const userData = ref({
 })
 const userRole = ref(null)
 
-
 const bookingStore = useBookingStore()
 const userRating = ref(0)
 // const userRating = computed(() => bookingStore.averageRating)
@@ -29,16 +28,14 @@ const userRating = ref(0)
 onMounted(async () => {
   const authUserStore = useAuthUserStore()
   await authUserStore.isAuthenticated()
-  
+
   if (authUserStore.userData?.id) {
     const ratings = await bookingStore.fetchRiderRatings(authUserStore.userData.id)
-    userRating.value = ratings.length ? 
-      (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : 
-      0
+    userRating.value = ratings.length
+      ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
+      : 0
   }
-}
-)
-
+})
 
 // const onFileChange = async (event) => {
 //   const file = event.target.files[0]
@@ -62,8 +59,6 @@ onMounted(async () => {
 //   }
 // }
 
-
-
 // const onFileChange = async (event) => {
 //   const file = event.target.files[0]
 //   if (!file) return
@@ -85,9 +80,6 @@ onMounted(async () => {
 //   }
 // }
 
-
-
-
 /// working function
 const onFileChange = async (event) => {
   const file = event.target.files[0]
@@ -98,7 +90,7 @@ const onFileChange = async (event) => {
     // Force a refresh of user data
     await getuser()
     // Force component re-render
-    userData.value = {...userData.value}
+    userData.value = { ...userData.value }
   } catch (error) {
     console.error('Error updating image:', error)
     alert('Failed to upload image')
@@ -124,9 +116,6 @@ const onFileChange = async (event) => {
 //   userData.value.image_url = userMetaData.image_url
 //   loadingUser.value = false
 // }
-
-
-
 
 // Check if user is a driver directly from Supabase
 async function checkUserRole() {
@@ -157,14 +146,6 @@ onMounted(async () => {
   await checkUserRole()
 })
 
-
-
-
-
-
-
-
-
 const getuser = async () => {
   loadingUser.value = true
   const userMetaData = await getuserInformation()
@@ -175,8 +156,8 @@ const getuser = async () => {
     return
   }
 
-  console.log('Retrieved user data:', userMetaData)  // Add this to debug
-  
+  console.log('Retrieved user data:', userMetaData) // Add this to debug
+
   userData.value.id = userMetaData.id
   userData.value.email = userMetaData.email
   userData.value.fullname = userMetaData.firstname + ' ' + userMetaData.lastname
@@ -184,11 +165,12 @@ const getuser = async () => {
   userData.value.is_driver = userMetaData?.is_driver
   userData.value.phone_num = userMetaData.phone
   userData.value.image_url = userMetaData.image_url
-  
-  console.log('Updated userData image_url:', userData.value.image_url)  // Add this to debug
-  
+
+  console.log('Updated userData image_url:', userData.value.image_url) // Add this to debug
+
   loadingUser.value = false
 }
+
 onMounted(() => {
   getuser()
 })
@@ -217,23 +199,14 @@ const fallbackImage = ref('/images/ava.png')
 <template>
   <!-- PROFILE PAGE -->
   <v-card class="profile-card rounded-0" flat>
-    
     <!-- Cover Photo -->
     <v-card>
-      <div class="background-pic" elevation="5">
-        <v-img src="coverPhoto" height="200px" class="bg-purple-lighten-4">
-          <v-btn 
-          :to="dashboardPath" text class="ma-2 ">
+      <div class="background-pic">
+        <v-img src="coverPhoto" height="200px" class="bg-purple-lighten-2">
+          <v-btn :to="dashboardPath" text class="ma-2" variant="text">
             <v-icon>mdi-keyboard-backspace</v-icon>
             back
           </v-btn>
-          <input
-            type="file"
-            ref="coverInput"
-            accept="image/*"
-            class="d-none"
-            @change="onCoverChange"
-          />
         </v-img>
       </div>
     </v-card>
@@ -241,12 +214,13 @@ const fallbackImage = ref('/images/ava.png')
     <!-- Profile Picture -->
     <div>
       <v-avatar size="150" class="profile-avatar elevation-4">
-        <v-img 
-        class="image-profile" 
-         :src="userData.image_url ? `${userData.image_url}?t=${Date.now()}` : fallbackImage"
-         :key="Date.now()" />
+        <v-img
+          class="image-profile"
+          :src="userData.image_url ? `${userData.image_url}?t=${Date.now()}` : fallbackImage"
+          :key="Date.now()"
+        />
         <v-btn icon class="ma-1 button-cover" @click.stop="$refs.profileInput.click()">
-          <v-icon size="20">mdi-camera</v-icon>
+          <v-icon color="white" size="20">mdi-camera</v-icon>
         </v-btn>
         <input
           type="file"
@@ -255,6 +229,7 @@ const fallbackImage = ref('/images/ava.png')
           class="d-none"
           @change="onFileChange"
           :disabled="loadingUser"
+        />
       </v-avatar>
     </div>
 
@@ -346,12 +321,11 @@ const fallbackImage = ref('/images/ava.png')
               <br />
               <h3 class="title-rating">Ratings:</h3>
 
-              <h3 class="pl-2">
-              </h3>
+              <h3 class="pl-2"></h3>
               <v-divider class="mx-3" vertical></v-divider>
               <v-rating
                 size="25"
-               :model-value="userRating"
+                :model-value="userRating"
                 active-color="purple"
                 color="purple lighten-4"
                 hover
@@ -411,7 +385,7 @@ const fallbackImage = ref('/images/ava.png')
   top: 150px;
   left: 50%;
   transform: translateX(-50%);
-  border: 4px solid #ba68c8;
+  border: 4px solid #6a1b9a;
   overflow: visible;
   cursor: pointer;
 }
@@ -425,7 +399,7 @@ const fallbackImage = ref('/images/ava.png')
   right: 0;
   bottom: 0;
   box-shadow: none;
-  background: #ba68c8;
+  background: #6a1b9a;
 }
 .close-btn {
   background: none;
@@ -436,11 +410,6 @@ const fallbackImage = ref('/images/ava.png')
   border-radius: 50%;
 }
 
-.background-pic {
-  /* border: 2px solid whitesmoke; */
-  border-bottom-right-radius: 30px;
-  cursor: pointer;
-}
 .card-details {
   padding: 20px;
 }

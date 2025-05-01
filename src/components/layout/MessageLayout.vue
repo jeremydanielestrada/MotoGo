@@ -54,23 +54,42 @@ function handleToggleNavigation(state) {
 </script>
 
 <template>
-  <v-layout>
-    <v-app-bar color="purple-darken-3">
-      <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-
+  <v-app>
+    <v-app-bar color="purple-lighten-2">
       <!-- Use the computed dashboardPath -->
-      <v-btn :to="dashboardPath" v-if="$vuetify.display.mdAndUp">
+      <v-btn class="text-white" :to="dashboardPath" v-if="$vuetify.display.mdAndUp">
         <v-icon> mdi-keyboard-backspace </v-icon>
-        Back to Dashboard
+        <!-- Back to Dashboard -->
       </v-btn>
 
       <v-btn :to="dashboardPath" v-if="!$vuetify.display.mdAndUp">
-        <v-icon class="ms-4" size="30">mdi-keyboard-backspace</v-icon>
+        <v-icon size="30">mdi-keyboard-backspace</v-icon>
       </v-btn>
+      <template v-slot:append>
+        <v-icon v-show="smAndDown" @click="toggleDrawer" class="me-4" size="30"
+          >mdi-message-outline</v-icon
+        >
+      </template>
+
+      <v-app-bar-nav-icon
+        variant="text"
+        @click.stop="drawer = !drawer"
+        color="white"
+      ></v-app-bar-nav-icon>
+
+      <!-- Use the computed dashboardPath -->
+      <!-- <v-btn :to="dashboardPath" v-if="$vuetify.display.mdAndUp">
+        <v-icon> mdi-keyboard-backspace </v-icon>
+        Back to Dashboard
+      </v-btn> -->
 
       <v-spacer></v-spacer>
-      <h1 class="text-h6 font-weight-bold me-5">Messages</h1>
+      <h1 class="text-h6 font-weight-bold me-5 text-white">Messages</h1>
     </v-app-bar>
+
+    <!-- Use the computed dashboardPath -->
+    <v-btn class="text-purple-darken-3" :to="dashboardPath" v-if="mdAndUp"> </v-btn>
+    <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
 
     <v-navigation-drawer
       v-model="drawer"
@@ -83,7 +102,7 @@ function handleToggleNavigation(state) {
     <v-main>
       <slot name="content" :drawer="drawer" :onToggleNavigation="handleToggleNavigation" />
     </v-main>
-  </v-layout>
+  </v-app>
 </template>
 
 <style>
