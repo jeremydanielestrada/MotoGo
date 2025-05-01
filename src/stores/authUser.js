@@ -102,12 +102,10 @@ export const useAuthUserStore = defineStore('authUser', () => {
 
   // Add Rating
 
-  async function addRating(entityId, rating) {
+  async function addRating(rating) {
     const { data, error } = await supabase
-      .from('ratings') // Replace with your actual table name
+      .from('bookings') // Replace with your actual table name
       .insert({
-        user_id: userData.value.id,
-        entity_id: entityId,
         rating,
       })
 

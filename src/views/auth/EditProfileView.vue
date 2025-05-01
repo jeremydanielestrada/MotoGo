@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { getAvatarText } from '@/utils/helpers'
 import { getuserInformation } from '@/utils/supabase'
 import { watch } from 'vue'
 import { useAuthUserStore } from '@/stores/authUser'
-
+import { supabase } from '@/utils/supabase'
+import { useBookingStore } from '@/stores/bookings'
 const uploadImg = useAuthUserStore()
 
 const loadingUser = ref(true)
@@ -17,6 +18,23 @@ const userData = ref({
   is_driver: false,
   phone_num: '',
   image_url: '',
+})
+const userRole = ref(null)
+
+const bookingStore = useBookingStore()
+const userRating = ref(0)
+// const userRating = computed(() => bookingStore.averageRating)
+
+onMounted(async () => {
+  const authUserStore = useAuthUserStore()
+  await authUserStore.isAuthenticated()
+
+  if (authUserStore.userData?.id) {
+    const ratings = await bookingStore.fetchRiderRatings(authUserStore.userData.id)
+    userRating.value = ratings.length
+      ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
+      : 0
+  }
 })
 
 // const onFileChange = async (event) => {
@@ -99,6 +117,35 @@ const onFileChange = async (event) => {
 //   loadingUser.value = false
 // }
 
+// Check if user is a driver directly from Supabase
+async function checkUserRole() {
+  const { data, error } = await supabase.auth.getUser()
+
+  if (error) {
+    console.error('Error getting user:', error.message)
+    return null
+  }
+
+  if (data && data.user) {
+    // Store the role in a local ref
+    userRole.value = data.user.user_metadata?.is_driver === true ? 'driver' : 'passenger'
+    return data.user
+  }
+
+  return null
+}
+
+// Determine dashboard path based on direct user role check
+const dashboardPath = computed(() => {
+  return userRole.value === 'driver' ? '/system/rider-dashboard' : '/system/passenger-dashboard'
+})
+
+// Combine the onMounted hooks
+onMounted(async () => {
+  // Get user role directly from Supabase
+  await checkUserRole()
+})
+
 const getuser = async () => {
   loadingUser.value = true
   const userMetaData = await getuserInformation()
@@ -144,7 +191,6 @@ watch(phoneNumber, (newVal) => {
   localStorage.setItem('phoneNumber', newVal)
 })
 // RATING
-const rating = ref(3.5)
 
 // PROFILE PHOTO CHANGER
 const fallbackImage = ref('/images/ava.png')
@@ -160,6 +206,12 @@ const fallbackImage = ref('/images/ava.png')
           <router-link to="/system/passenger-dashboard">
             <v-icon color="white" size="30" class="ml-4 mt-2">mdi-keyboard-backspace</v-icon>
           </router-link>
+        </v-img>
+        <v-img src="coverPhoto" height="200px" class="bg-purple-lighten-4">
+          <v-btn :to="dashboardPath" text class="ma-2">
+            <v-icon>mdi-keyboard-backspace</v-icon>
+            back
+          </v-btn>
           <input
             type="file"
             ref="coverInput"
@@ -281,17 +333,15 @@ const fallbackImage = ref('/images/ava.png')
               <br />
               <h3 class="title-rating">Ratings:</h3>
 
-              <h3 class="pl-2">
-                {{ rating }}
-              </h3>
+              <h3 class="pl-2"></h3>
               <v-divider class="mx-3" vertical></v-divider>
               <v-rating
                 size="25"
-                v-model="rating"
+                :model-value="userRating"
                 active-color="purple"
                 color="purple lighten-4"
-                half-increments
                 hover
+                readonly
               ></v-rating>
             </div>
           </v-card>

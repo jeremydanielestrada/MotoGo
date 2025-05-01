@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const apiKey = '5b3ce3597851110001cf6248c205cf9c26d84099907afd1e86c6766c' // Replace this with your actual OpenRouteService API key
+const apiKey = import.meta.env.VITE_OPENROUTESERVICE_API_KEY
 
 export const OpenRouteService = {
   async getRoute(start, end) {

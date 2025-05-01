@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '@/views/auth/LoginView.vue'
-import MessageView from '@/views/MessageView.vue'
+import MessageView from '@/views/auth/MessageView.vue'
 import MobileNotifacations from '@/components/common/MobileNotifacations.vue'
 import { isAuthenticated, getuserInformation } from '@/utils/supabase'
 import NotFoundView from '@/views/errors/NotFoundView.vue'
@@ -30,6 +30,12 @@ const router = createRouter({
     {
       path: '/message',
       name: 'Messages',
+      component: MessageView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/messages/:id',
+      name: 'MessageDetail',
       component: MessageView,
       meta: { requiresAuth: true },
     },
