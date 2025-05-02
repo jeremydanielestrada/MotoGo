@@ -434,11 +434,11 @@ onUnmounted(() => {
                 @keyup.enter.prevent="sendMessage"
               ></v-textarea>
               <v-btn
-                color="purple-darken-3"
                 icon
                 class="messenger-send-btn"
                 :disabled="!message.trim()"
                 @click="sendMessage"
+                color="purple-darken-3"
               >
                 <v-icon>mdi-send</v-icon>
               </v-btn>
