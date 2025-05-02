@@ -59,6 +59,7 @@ import RegisterForm from '@/components/auth/RegisterForm.vue'
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 1.5rem;
 }
+
 .image-logo {
   padding-left: 20px;
 }

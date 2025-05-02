@@ -90,6 +90,7 @@ const isPasswordVisible = ref(false)
     <v-col cols="4"> </v-col>
   </v-row>
 </template>
+
 <style scoped>
 .title-name {
   font-size: 4.5rem;
