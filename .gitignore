@@ -29,5 +29,4 @@ coverage
 
 *.tsbuildinfo
 .qodo
-
 .env
